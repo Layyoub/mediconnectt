@@ -1,0 +1,5 @@
+<li class="verif-item verif-{{ c.status }}">
+  <i class="bi bi-{% if c.status == 'ok' %}check-circle-fill{% elif c.status == 'warning' %}exclamation-triangle-fill{% elif c.status == 'fail' %}x-octagon-fill{% elif c.status == 'unknown' %}question-circle-fill{% else %}info-circle-fill{% endif %}" aria-hidden="true"></i>
+  <div><strong>{{ c.label }}</strong><span>{{ c.detail }}</span></div>
+  <span class="visually-hidden">{% if c.status == 'ok' %}Conforme{% elif c.status == 'warning' %}À vérifier{% elif c.status == 'fail' %}Problème{% elif c.status == 'unknown' %}Non vérifiable{% else %}Information{% endif %}</span>
+</li>

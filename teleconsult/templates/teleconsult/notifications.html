@@ -1,0 +1,40 @@
+{% extends layout %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Notifications</h1>
+    <p>Demandes, confirmations, consultations et comptes rendus.</p>
+  </div>
+  {% if unread_notifications %}
+  <form method="post" action="{% url 'teleconsult:notifications_read_all' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-light"><i class="bi bi-check2-all"></i> Tout marquer comme lu</button>
+  </form>
+  {% endif %}
+</div>
+
+<section class="card">
+  <div class="card-body-flush">
+    {% for n in notifications %}
+    <a href="{% url 'teleconsult:notification_open' n.pk %}" class="list-item notif{% if not n.is_read %} is-unread{% endif %}">
+      <span class="icon-badge icon-badge-sm{% if n.is_read %} icon-badge-neutral{% endif %}"><i class="bi bi-{{ n.icon }}"></i></span>
+      <div class="list-main">
+        <strong>{{ n.title }}</strong>
+        <span>{{ n.body }}</span>
+      </div>
+      <span class="list-meta">{{ n.created_at|timesince }}</span>
+      {% if not n.is_read %}<span class="unread-dot" aria-label="Non lue"></span>{% endif %}
+    </a>
+    {% empty %}
+    <div class="empty-state">
+      <span class="icon-badge icon-badge-neutral"><i class="bi bi-bell-slash"></i></span>
+      <strong>Aucune notification</strong>
+      <p>Vous serez prévenu ici des nouvelles demandes, confirmations et comptes rendus.</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

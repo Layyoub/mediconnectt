@@ -1,0 +1,221 @@
+{% extends "core/doctor/_layout.html" %}
+
+{% block title %}Espace médecin{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Bonjour, Dr {{ user.last_name }}</h1>
+    <p>{% now "l j F Y" %} · {{ profile.get_specialty_display }} · {{ profile.city }}</p>
+  </div>
+  {% if profile.is_verified %}
+  <a href="{% url 'appointments:availability' %}" class="btn btn-primary"><i class="bi bi-calendar-plus"></i> Gérer mes disponibilités</a>
+  {% endif %}
+</div>
+
+{% for w in waiting_rooms %}
+<section class="card resume-card" style="margin-bottom:1.25rem;border-color:var(--red)">
+  <span class="lobby-pulse" style="width:56px;height:56px;margin:0"><span class="avatar">{{ w.appointment.patient.first_name|slice:":1"|upper }}{{ w.appointment.patient.last_name|slice:":1"|upper }}</span></span>
+  <div class="resume-text">
+    <h3>{{ w.appointment.patient.get_full_name }} vous attend</h3>
+    <p>Le patient est dans la salle d'attente (rendez-vous du {{ w.appointment.start|date:"j F" }} à {{ w.appointment.start|time:"H:i" }}).</p>
+  </div>
+  <div class="resume-actions">
+    <a href="{% url 'teleconsult:room' w.code %}" class="btn btn-primary"><i class="bi bi-camera-video"></i> Démarrer la consultation</a>
+  </div>
+</section>
+{% endfor %}
+
+<!-- Statut de vérification -->
+<section class="card" style="margin-bottom:1.25rem">
+  {% if profile.status == "verified" %}
+  <div class="verify-card">
+    <span class="icon-badge icon-badge-solid"><i class="bi bi-patch-check"></i></span>
+    <div style="flex:1">
+      <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap"><h3 style="margin:0">Compte vérifié</h3><span class="badge badge-verified"><i class="bi bi-shield-check"></i> Vérifié</span></div>
+      <p>Vos justificatifs ont été validés{% if profile.reviewed_at %} le {{ profile.reviewed_at|date:"j F Y" }}{% endif %}. Votre profil est visible par les patients.</p>
+    </div>
+  </div>
+  {% elif profile.status == "rejected" %}
+  <div class="verify-card">
+    <span class="icon-badge" style="background:var(--red-dark);color:#fff"><i class="bi bi-x-octagon"></i></span>
+    <div style="flex:1">
+      <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap"><h3 style="margin:0">Dossier refusé</h3><span class="badge badge-dark">Refusé</span></div>
+      <p>Votre dossier n'a pas pu être validé. Contactez l'équipe MediConnect pour le compléter.</p>
+      {% if profile.rejection_reason %}<div class="alert alert-error" style="margin:1rem 0 0"><i class="bi bi-chat-left-text"></i><p><strong>Motif :</strong> {{ profile.rejection_reason }}</p></div>{% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="verify-card">
+    <span class="icon-badge"><i class="bi bi-hourglass-split"></i></span>
+    <div style="flex:1">
+      <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap"><h3 style="margin:0">Vérification en cours</h3><span class="badge badge-soft">En attente</span></div>
+      <p>Votre dossier a été soumis le {{ profile.submitted_at|date:"j F Y" }}. Notre équipe vérifie vos justificatifs sous 48 h ouvrées. Vous serez notifié par e-mail.</p>
+      <div class="verify-steps">
+        <span class="done"><i class="bi bi-check2"></i> Dossier soumis</span>
+        <span class="current"><i class="bi bi-search"></i> Vérification des justificatifs</span>
+        <span><i class="bi bi-unlock"></i> Activation du compte</span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+{% if profile.is_verified %}
+{% if not has_availability %}
+<div class="alert alert-info" style="margin-bottom:1.25rem"><i class="bi bi-clock"></i><p><strong>Ajoutez vos disponibilités</strong> pour que les patients puissent réserver une téléconsultation avec vous. <a href="{% url 'appointments:availability' %}">Définir mes plages horaires</a></p></div>
+{% endif %}
+
+<div class="dash-grid">
+  <div class="col-4"><div class="card stat-card"><span class="icon-badge"><i class="bi bi-calendar-check"></i></span><div><strong>{{ stats.today }}</strong><span>Rendez-vous aujourd'hui</span></div></div></div>
+  <div class="col-4"><div class="card stat-card"><span class="icon-badge icon-badge-solid"><i class="bi bi-inbox"></i></span><div><strong>{{ stats.pending }}</strong><span>Demandes en attente</span></div></div></div>
+  <div class="col-4"><div class="card stat-card"><span class="icon-badge icon-badge-neutral"><i class="bi bi-graph-up"></i></span><div><strong>{{ stats.month }}</strong><span>Rendez-vous ce mois-ci</span></div></div></div>
+
+  <!-- Demandes de consultation -->
+  <div class="col-7">
+    <section class="card" style="height:100%">
+      <div class="card-header">
+        <h3><i class="bi bi-inbox"></i> Demandes de consultation</h3>
+        <a href="{% url 'appointments:requests' %}">Tout voir</a>
+      </div>
+      <div class="card-body-flush">
+        {% for a in requests %}
+        <div class="list-item">
+          <span class="avatar avatar-neutral">{{ a.patient.first_name|slice:":1"|upper }}{{ a.patient.last_name|slice:":1"|upper }}</span>
+          <div class="list-main">
+            <strong>{{ a.patient.get_full_name }}</strong>
+            <span>{{ a.start|date:"D j M" }} à {{ a.start|time:"H:i" }} · {{ a.reason|truncatechars:40 }}</span>
+          </div>
+          {% if a.triage_session %}<span class="badge triage-{{ a.triage_session.result.level }}">{{ a.triage_session.result.get_level_display }}</span>{% endif %}
+          <div class="list-actions">
+            <form method="post" action="{% url 'appointments:decide' a.pk %}">
+              {% csrf_token %}
+              <input type="hidden" name="decision" value="accept">
+              <input type="hidden" name="next" value="{% url 'doctor_dashboard' %}">
+              <button type="submit" class="btn btn-primary btn-sm">Accepter</button>
+            </form>
+            <a href="{% url 'appointments:detail' a.pk %}" class="btn btn-light btn-sm">Examiner</a>
+          </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+          <span class="icon-badge icon-badge-neutral"><i class="bi bi-inbox"></i></span>
+          <strong>Aucune demande en attente</strong>
+          <p>Les nouvelles demandes de vos patients apparaîtront ici.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <!-- Prochains rendez-vous -->
+  <div class="col-5">
+    <section class="card" style="height:100%">
+      <div class="card-header">
+        <h3><i class="bi bi-calendar2-week"></i> Prochains rendez-vous</h3>
+        <a href="{% url 'appointments:agenda' %}">Agenda</a>
+      </div>
+      <div class="card-body-flush">
+        {% for a in appointments %}
+        <a href="{% url 'appointments:detail' a.pk %}" class="list-item" style="color:inherit">
+          <div class="date-tile"><span>{{ a.start|date:"M" }}</span><strong>{{ a.start|date:"j" }}</strong></div>
+          <div class="list-main">
+            <strong>{{ a.patient.get_full_name }}</strong>
+            <span>{{ a.reason|truncatechars:40 }}</span>
+          </div>
+          <div class="list-meta"><strong>{{ a.start|time:"H:i" }}</strong>{% if a.start|date:"Y-m-d" == today|date:"Y-m-d" %}Aujourd'hui{% else %}{{ a.start|date:"D" }}{% endif %}</div>
+        </a>
+        {% empty %}
+        <div class="empty-state">
+          <span class="icon-badge icon-badge-neutral"><i class="bi bi-calendar-x"></i></span>
+          <strong>Agenda vide</strong>
+          <p>Les rendez-vous que vous confirmez apparaîtront ici.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <!-- Informations de triage -->
+  <div class="col-6">
+    <section class="card" style="height:100%">
+      <div class="card-header">
+        <h3><i class="bi bi-clipboard2-pulse"></i> Triage des patients</h3>
+        <span class="small text-muted">Évaluations partagées</span>
+      </div>
+      <div class="card-body-flush">
+        {% for a in triaged %}
+        <div class="list-item">
+          <span class="icon-badge icon-badge-sm"><i class="bi bi-activity"></i></span>
+          <div class="list-main">
+            <strong>{{ a.patient.get_full_name }}</strong>
+            <span>{{ a.triage_session.chief_complaint|truncatechars:60 }}</span>
+          </div>
+          <span class="badge triage-{{ a.triage_session.result.level }}">{{ a.triage_session.result.get_level_display }}</span>
+          <a href="{% url 'appointments:detail' a.pk %}" class="btn btn-ghost btn-sm" aria-label="Voir l'évaluation"><i class="bi bi-chevron-right"></i></a>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+          <span class="icon-badge icon-badge-neutral"><i class="bi bi-clipboard2-pulse"></i></span>
+          <strong>Aucune évaluation partagée</strong>
+          <p>Quand un patient joint son évaluation à une demande, vous la retrouvez ici.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <!-- Comptes rendus -->
+  <div class="col-6">
+    <section class="card" style="height:100%">
+      <div class="card-header">
+        <h3><i class="bi bi-file-earmark-medical"></i> Comptes rendus</h3>
+        <a href="{% url 'teleconsult:list' %}">Consultations</a>
+      </div>
+      <div class="card-body">
+        <div class="quick-actions">
+          {% if live_room %}
+          <a href="{% url 'teleconsult:room' live_room.code %}" class="quick-action"><span class="icon-badge icon-badge-sm icon-badge-solid"><i class="bi bi-camera-video"></i></span>Consultation en cours<span>{{ live_room.appointment.patient.get_full_name }}</span></a>
+          {% else %}
+          <a href="{% url 'teleconsult:list' %}" class="quick-action"><span class="icon-badge icon-badge-sm"><i class="bi bi-camera-video"></i></span>Téléconsultations<span>Ouvrir une salle</span></a>
+          {% endif %}
+          <a href="{% url 'records:patients' %}" class="quick-action"><span class="icon-badge icon-badge-sm"><i class="bi bi-prescription2"></i></span>Nouvelle ordonnance<span>Choisir un patient</span></a>
+        </div>
+      </div>
+      <div class="card-body-flush" style="border-top:1px solid var(--border)">
+        {% for r in reports %}
+        <a href="{% url 'teleconsult:summary' r.room.code %}" class="list-item" style="color:inherit">
+          <i class="bi bi-file-earmark-text text-red"></i>
+          <div class="list-main"><strong>{{ r.room.appointment.patient.get_full_name }}</strong><span>{{ r.created_at|date:"j M Y" }} · {{ r.diagnosis|truncatechars:50 }}</span></div>
+          <i class="bi bi-chevron-right text-muted"></i>
+        </a>
+        {% empty %}
+        <div class="empty-state">
+          <span class="icon-badge icon-badge-neutral"><i class="bi bi-file-earmark-text"></i></span>
+          <strong>Aucun compte rendu</strong>
+          <p>Vous rédigez le compte rendu en terminant une téléconsultation.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+
+{% else %}
+<!-- Compte non vérifié : modules verrouillés -->
+<div class="dash-grid">
+  {% for block in locked_blocks %}
+  <div class="col-6">
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-{{ block.icon }}"></i> {{ block.title }}</h3><span class="badge badge-neutral"><i class="bi bi-lock"></i> Verrouillé</span></div>
+      <div class="empty-state">
+        <span class="icon-badge icon-badge-neutral"><i class="bi bi-lock"></i></span>
+        <strong>Disponible après vérification</strong>
+        <p>{{ block.text }}</p>
+      </div>
+    </section>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

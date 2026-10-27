@@ -1,0 +1,51 @@
+{% extends layout %}
+
+{% block title %}Paramètres du compte{% endblock %}
+{% block breadcrumb %}<a href="{% url 'backoffice:overview' %}">Back-office</a><i class="bi bi-chevron-right small"></i><strong>Paramètres</strong>{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Paramètres du compte</h1>
+    <p>Votre adresse de connexion et votre mot de passe.</p>
+  </div>
+  {% if role != "admin" %}<a href="{% url 'account_profile' %}" class="btn btn-light"><i class="bi bi-person"></i> {% if role == "doctor" %}Profil professionnel{% else %}Mon profil{% endif %}</a>{% endif %}
+</div>
+
+<div class="dash-grid">
+  <div class="col-6">
+    <section class="card" style="height:100%">
+      <div class="card-header"><h3><i class="bi bi-envelope"></i> Adresse e-mail</h3></div>
+      <div class="card-body">
+        <p class="small text-muted" style="margin-top:0">Adresse actuelle : <strong class="text-body">{{ user.email }}</strong>. C'est aussi votre identifiant de connexion. Un message de confirmation est envoyé à l'ancienne adresse.</p>
+        <form method="post" novalidate data-loading-form>
+          {% csrf_token %}
+          <input type="hidden" name="action" value="email">
+          {% include "core/partials/form_errors.html" with form=email_form %}
+          {% include "core/partials/field.html" with field=email_form.email icon="envelope" %}
+          {% include "core/partials/field.html" with field=email_form.password %}
+          <button type="submit" class="btn btn-primary" data-loading-text="Enregistrement…">Changer d'adresse</button>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <div class="col-6">
+    <section class="card" style="height:100%">
+      <div class="card-header"><h3><i class="bi bi-key"></i> Mot de passe</h3></div>
+      <div class="card-body">
+        <p class="small text-muted" style="margin-top:0">8 caractères minimum, pas uniquement des chiffres, différent de votre nom ou de votre e-mail.</p>
+        <form method="post" novalidate data-loading-form>
+          {% csrf_token %}
+          <input type="hidden" name="action" value="password">
+          {% include "core/partials/form_errors.html" with form=password_form %}
+          {% include "core/partials/field.html" with field=password_form.old_password %}
+          {% include "core/partials/field.html" with field=password_form.new_password1 %}
+          {% include "core/partials/field.html" with field=password_form.new_password2 %}
+          <button type="submit" class="btn btn-primary" data-loading-text="Enregistrement…">Changer le mot de passe</button>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% comment %}Accept / refuse buttons for a pending request. Params: a (appointment), next (URL to return to).{% endcomment %}
+<div class="request-actions">
+  <form method="post" action="{% url 'appointments:decide' a.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="decision" value="accept">
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Accepter</button>
+  </form>
+  <details class="refuse-box">
+    <summary class="btn btn-light btn-sm"><i class="bi bi-x-lg"></i> Refuser</summary>
+    <form method="post" action="{% url 'appointments:decide' a.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="decision" value="refuse">
+      <input type="hidden" name="next" value="{{ next }}">
+      <label class="form-label" for="refuse-{{ a.pk }}">Message au patient<span class="req" aria-hidden="true">*</span></label>
+      <textarea class="form-control" id="refuse-{{ a.pk }}" name="message" rows="2" required maxlength="1000" placeholder="Ex. : je ne suis pas disponible à cet horaire, merci de choisir un autre créneau."></textarea>
+      <button type="submit" class="btn btn-dark btn-sm"><i class="bi bi-send"></i> Confirmer le refus</button>
+    </form>
+  </details>
+</div>

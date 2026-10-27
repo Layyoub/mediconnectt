@@ -1,0 +1,72 @@
+{% extends "core/backoffice/_layout.html" %}
+
+{% block title %}Back-office{% endblock %}
+{% block breadcrumb %}<span>Back-office</span><i class="bi bi-chevron-right small"></i><strong>Vue d'ensemble</strong>{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Vue d'ensemble</h1>
+    <p>Suivi de la plateforme et des dossiers à traiter.</p>
+  </div>
+  <a href="{% url 'backoffice:doctor_list' %}?statut=pending" class="btn btn-primary"><i class="bi bi-person-check"></i> Traiter les dossiers</a>
+</div>
+
+<div class="dash-grid">
+  <div class="col-3"><div class="card stat-card"><span class="icon-badge"><i class="bi bi-people"></i></span><div><strong>{{ stats.patients }}</strong><span>Patients inscrits</span></div></div></div>
+  <div class="col-3"><div class="card stat-card"><span class="icon-badge icon-badge-neutral"><i class="bi bi-person-badge"></i></span><div><strong>{{ stats.doctors }}</strong><span>Médecins inscrits</span></div></div></div>
+  <div class="col-3"><div class="card stat-card"><span class="icon-badge icon-badge-solid"><i class="bi bi-hourglass-split"></i></span><div><strong>{{ stats.pending }}</strong><span>Dossiers en attente</span></div></div></div>
+  <div class="col-3"><div class="card stat-card"><span class="icon-badge"><i class="bi bi-shield-check"></i></span><div><strong>{{ stats.verified }}</strong><span>Médecins vérifiés</span></div></div></div>
+
+  <div class="col-7">
+    <section class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-hourglass-split"></i> Dossiers médecins à vérifier</h3>
+        <a href="{% url 'backoffice:doctor_list' %}?statut=pending">Tout voir</a>
+      </div>
+      <div class="card-body-flush">
+        {% for d in pending_doctors %}
+        <div class="list-item">
+          <span class="avatar">{{ d.user.first_name|slice:":1"|upper }}{{ d.user.last_name|slice:":1"|upper }}</span>
+          <div class="list-main">
+            <strong>Dr {{ d.user.get_full_name }}</strong>
+            <span>{{ d.get_specialty_display }} · {{ d.city }} · soumis le {{ d.submitted_at|date:"j M Y" }}</span>
+          </div>
+          <a href="{% url 'backoffice:doctor_detail' d.pk %}" class="btn btn-primary btn-sm">Examiner</a>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+          <span class="icon-badge icon-badge-neutral"><i class="bi bi-check2-all"></i></span>
+          <strong>Aucun dossier en attente</strong>
+          <p>Tous les dossiers médecins ont été traités.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <div class="col-5">
+    <section class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-person-plus"></i> Derniers patients inscrits</h3>
+        <a href="{% url 'backoffice:patient_list' %}">Tout voir</a>
+      </div>
+      <div class="card-body-flush">
+        {% for p in recent_patients %}
+        <div class="list-item">
+          <span class="avatar avatar-neutral">{{ p.user.first_name|slice:":1"|upper }}{{ p.user.last_name|slice:":1"|upper }}</span>
+          <div class="list-main"><strong>{{ p.user.get_full_name }}</strong><span>{{ p.user.email }}</span></div>
+          <span class="list-meta">{{ p.created_at|date:"j M" }}</span>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+          <span class="icon-badge icon-badge-neutral"><i class="bi bi-people"></i></span>
+          <strong>Aucun patient</strong>
+          <p>Les nouvelles inscriptions apparaîtront ici.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

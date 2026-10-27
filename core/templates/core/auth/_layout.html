@@ -1,0 +1,31 @@
+{% extends "core/base.html" %}
+
+{% block body %}
+<div class="auth-page">
+  <aside class="auth-aside">
+    {% include "core/partials/logo.html" with light=True %}
+    <div>
+      {% block aside %}
+      <h2>Votre santé mérite une réponse rapide et fiable.</h2>
+      <p>Évaluez vos symptômes, consultez un médecin vérifié et suivez vos soins depuis un espace unique et sécurisé.</p>
+      <ul class="auth-points">
+        <li><i class="bi bi-cpu"></i><div><strong>Triage assisté par IA</strong><span>Un niveau d'urgence clair en quelques minutes.</span></div></li>
+        <li><i class="bi bi-camera-video"></i><div><strong>Téléconsultation</strong><span>Un médecin en vidéo, sans vous déplacer.</span></div></li>
+        <li><i class="bi bi-file-earmark-medical"></i><div><strong>Ordonnances en ligne</strong><span>Vos documents médicaux toujours accessibles.</span></div></li>
+      </ul>
+      {% endblock %}
+    </div>
+    <div class="auth-aside-foot"><i class="bi bi-shield-lock"></i> Vos données de santé sont chiffrées et confidentielles.</div>
+  </aside>
+
+  <main class="auth-main" id="contenu" tabindex="-1">
+    <div class="auth-topbar">
+      {% include "core/partials/logo.html" %}
+      <a href="{% url 'home' %}" class="text-muted"><i class="bi bi-arrow-left"></i> Retour à l'accueil</a>
+      <button type="button" class="icon-btn" data-a11y-open aria-label="Accessibilité" title="Accessibilité"><i class="bi bi-universal-access-circle"></i></button>
+      {% block topbar_right %}{% endblock %}
+    </div>
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

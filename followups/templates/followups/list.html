@@ -1,0 +1,11 @@
+{% extends layout %}
+{% block title %}Plans de suivi{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Plans de suivi</h1><p>{% if role == "patient" %}Les tâches convenues avec vos médecins et votre avancement.{% else %}Créez un plan depuis une consultation, puis suivez l’avancement de vos patients.{% endif %}</p></div></div>
+{% if role == "doctor" %}<section class="card" style="margin-bottom:1.25rem"><div class="card-header"><h3><i class="bi bi-calendar-plus"></i> Créer un plan depuis une consultation</h3><span class="small text-muted">{{ appointments_ready|length }} disponible{% if appointments_ready|length != 1 %}s{% endif %}</span></div><div class="card-body-flush">{% for appointment in appointments_ready %}<div class="list-item"><span class="icon-badge icon-badge-sm"><i class="bi bi-person"></i></span><div class="list-main"><strong>{{ appointment.patient.get_full_name }}</strong><span>{{ appointment.start|date:"j M Y à H:i" }} · {{ appointment.reason|truncatechars:90 }}</span></div><a class="btn btn-primary btn-sm" href="{% url 'followups:create_plan' appointment.patient_id appointment.pk %}"><i class="bi bi-plus-lg"></i> Créer</a></div>{% empty %}<div class="empty-state"><strong>Aucune consultation disponible</strong><p>Les consultations confirmées ou terminées sans plan apparaîtront ici.</p></div>{% endfor %}</div></section>{% endif %}
+<div class="dash-grid"><div class="col-12"><section class="card"><div class="card-body-flush">
+{% for plan in plans %}
+<a class="list-item" href="{% url 'followups:detail' plan.pk %}" style="color:inherit;text-decoration:none"><span class="icon-badge icon-badge-sm"><i class="bi bi-list-check"></i></span><div class="list-main"><strong>{{ plan.title }}</strong><span>{% if role == "patient" %}Dr {{ plan.appointment.doctor.get_full_name }}{% else %}{{ plan.appointment.patient.get_full_name }}{% endif %} · {{ plan.progress.done }}/{{ plan.progress.total }} tâches terminées</span></div><i class="bi bi-chevron-right"></i></a>
+{% empty %}<div class="empty-state"><span class="icon-badge icon-badge-neutral"><i class="bi bi-clipboard2-check"></i></span><strong>Aucun plan de suivi</strong><p>Les plans créés après une consultation apparaîtront ici.</p></div>{% endfor %}
+</div></section></div></div>
+{% endblock %}

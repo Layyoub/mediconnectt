@@ -1,0 +1,83 @@
+{% extends "core/patient/_layout.html" %}
+
+{% block title %}Choisir un créneau · Dr {{ doctor.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'appointments:book' %}?specialite={{ doctor.specialty }}{% if triage %}&triage={{ triage.pk }}{% endif %}" class="back-link"><i class="bi bi-arrow-left"></i> Changer de médecin</a>
+<div class="page-head">
+  <div>
+    <h1>Choisir un créneau</h1>
+    <p>Votre demande sera envoyée à Dr {{ doctor.user.get_full_name }}, qui la validera.</p>
+  </div>
+</div>
+
+<div class="book-steps">
+  <span class="done"><i class="bi bi-check2"></i> Médecin</span>
+  <span class="current"><i class="bi bi-2-circle"></i> Créneau</span>
+  <span><i class="bi bi-3-circle"></i> Validation par le médecin</span>
+</div>
+
+{% include "core/partials/form_errors.html" %}
+
+<form method="post" data-loading-form>
+  {% csrf_token %}
+  <div class="dash-grid">
+    <div class="col-7">
+      <section class="card">
+        <div class="card-header"><h3><i class="bi bi-calendar3"></i> Créneaux disponibles</h3><span class="small text-muted">{{ booking_days }} prochains jours</span></div>
+        <div class="card-body">
+          {% for error in form.slot.errors %}<div class="alert alert-error"><i class="bi bi-exclamation-circle"></i><p>{{ error }}</p></div>{% endfor %}
+          {% for day in days %}
+          <div class="slot-day">
+            <h4>{{ day.day|date:"l j F"|capfirst }} <span>{{ day.slots|length }} créneau{{ day.slots|length|pluralize:"x" }}</span></h4>
+            <div class="slot-grid" role="radiogroup" aria-label="{{ day.day|date:'l j F' }}">
+              {% for start, end in day.slots %}
+              {% with value=start.isoformat %}
+              <label class="slot">
+                <input type="radio" name="slot" value="{{ value }}"{% if value == selected_slot %} checked{% endif %} required data-slot-label="{{ start|date:'l j F'|capfirst }} à {{ start|time:'H:i' }}">
+                <span>{{ start|time:"H:i" }}</span>
+              </label>
+              {% endwith %}
+              {% endfor %}
+            </div>
+          </div>
+          {% empty %}
+          <div class="empty-state">
+            <span class="icon-badge icon-badge-neutral"><i class="bi bi-calendar-x"></i></span>
+            <strong>Aucun créneau libre</strong>
+            <p>Ce médecin n'a plus de disponibilité sur les {{ booking_days }} prochains jours. Choisissez un autre médecin.</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+
+    <div class="col-5">
+      <div class="book-aside">
+        <section class="card" style="margin-bottom:1.25rem">
+          <div class="card-body">
+            <div class="doctor-head">
+              <span class="avatar">{{ doctor.user.first_name|slice:":1"|upper }}{{ doctor.user.last_name|slice:":1"|upper }}</span>
+              <div>
+                <h3>Dr {{ doctor.user.get_full_name }} <i class="bi bi-patch-check-fill text-red" title="Médecin vérifié"></i></h3>
+                <p>{{ doctor.get_specialty_display }} · {{ doctor.city }}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-header"><h3><i class="bi bi-send"></i> Votre demande</h3></div>
+          <div class="card-body">
+            <div class="slot-summary"><i class="bi bi-clock"></i><span data-slot-summary>Sélectionnez un créneau dans la liste.</span></div>
+            {% include "core/partials/field.html" with field=form.reason %}
+            {% include "core/partials/field.html" with field=form.triage_session %}
+            <button type="submit" class="btn btn-primary btn-block btn-lg"{% if not days %} disabled{% endif %} data-loading-text="Envoi…"><i class="bi bi-send"></i> Envoyer la demande</button>
+            <p class="form-help" style="text-align:center;margin-top:.75rem">Le créneau est réservé pour vous pendant que le médecin examine votre demande.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

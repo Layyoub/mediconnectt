@@ -1,0 +1,177 @@
+{% extends "core/public/_layout.html" %}
+
+{% block title %}Votre santé, orientée et accompagnée{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow"><i class="bi bi-shield-plus"></i> Santé connectée &amp; sécurisée</span>
+      <h1>Le bon soin, <span>au bon moment</span>, où que vous soyez.</h1>
+      <p class="hero-lead">
+        MediConnect évalue vos symptômes grâce à l'intelligence artificielle, vous indique le niveau d'urgence
+        et vous met en relation avec un médecin vérifié en téléconsultation.
+      </p>
+      <div class="hero-actions">
+        <a href="{% url 'signup' %}" class="btn btn-primary btn-lg">Commencer <i class="bi bi-arrow-right"></i></a>
+        <a href="{% url 'login' %}" class="btn btn-outline btn-lg">Se connecter</a>
+      </div>
+      <div class="hero-trust">
+        <span><i class="bi bi-patch-check-fill"></i> Médecins vérifiés</span>
+        <span><i class="bi bi-lock-fill"></i> Données chiffrées</span>
+        <span><i class="bi bi-clock-fill"></i> Disponible 7j/7</span>
+      </div>
+    </div>
+
+    <div class="hero-visual" aria-hidden="true">
+      <div class="mock-card">
+        <div class="mock-head">
+          <div class="mock-title"><span class="icon-badge icon-badge-sm"><i class="bi bi-clipboard2-pulse"></i></span> Évaluation des symptômes</div>
+          <span class="badge triage-moderate">Modéré</span>
+        </div>
+        <div class="mock-row"><i class="bi bi-thermometer-half"></i><span>Fièvre 38,5 °C</span><span>3 jours</span></div>
+        <div class="mock-row"><i class="bi bi-lungs"></i><span>Toux sèche</span><span>3 jours</span></div>
+        <div class="mock-row"><i class="bi bi-battery-half"></i><span>Fatigue</span><span>Modérée</span></div>
+        <div class="mock-meter"><span></span></div>
+        <span class="small text-muted">Consultation recommandée sous 24 à 48 h</span>
+      </div>
+      <div class="mock-card">
+        <div class="mock-doctor">
+          <span class="avatar">SB</span>
+          <div>
+            <strong>Dr Sarah Benali</strong><br>
+            <span class="small text-muted">Médecine générale · Disponible aujourd'hui</span>
+          </div>
+          <span class="btn btn-primary btn-sm" style="margin-left:auto"><i class="bi bi-camera-video"></i> Consulter</span>
+        </div>
+      </div>
+      <div class="mock-floating"><i class="bi bi-patch-check-fill"></i> Médecin vérifié par MediConnect</div>
+    </div>
+  </div>
+</section>
+
+<!-- Fonctionnalités -->
+<section class="section" id="fonctionnalites">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Fonctionnalités</span>
+      <h2>Tout votre parcours de soin, sur une seule plateforme</h2>
+      <p>De la première évaluation jusqu'à l'ordonnance, MediConnect simplifie chaque étape pour les patients comme pour les médecins.</p>
+    </div>
+    <div class="grid grid-4">
+      <article class="feature-card">
+        <span class="icon-badge"><i class="bi bi-cpu"></i></span>
+        <h3>Triage assisté par IA</h3>
+        <p>Décrivez vos symptômes : notre assistant évalue le niveau d'urgence et vous oriente vers la prise en charge adaptée.</p>
+      </article>
+      <article class="feature-card">
+        <span class="icon-badge"><i class="bi bi-camera-video"></i></span>
+        <h3>Téléconsultation</h3>
+        <p>Échangez en vidéo avec un médecin depuis chez vous, sur ordinateur, tablette ou smartphone.</p>
+      </article>
+      <article class="feature-card">
+        <span class="icon-badge"><i class="bi bi-person-badge"></i></span>
+        <h3>Médecins vérifiés</h3>
+        <p>Chaque praticien est contrôlé : diplôme, inscription à l'Ordre et identité sont vérifiés avant activation.</p>
+      </article>
+      <article class="feature-card">
+        <span class="icon-badge"><i class="bi bi-file-earmark-medical"></i></span>
+        <h3>Suivi &amp; ordonnances</h3>
+        <p>Retrouvez l'historique de vos consultations, vos comptes rendus et vos ordonnances en un clic.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- Comment ça marche -->
+<section class="section section-alt" id="comment-ca-marche">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Comment ça marche</span>
+      <h2>Votre parcours patient en 4 étapes</h2>
+      <p>Une démarche simple et guidée, pensée pour vous faire gagner du temps.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">1</span><span class="step-connector"></span>
+        <h3>Créez votre compte</h3>
+        <p>Inscrivez-vous gratuitement en quelques minutes et complétez votre profil santé.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span><span class="step-connector"></span>
+        <h3>Décrivez vos symptômes</h3>
+        <p>Répondez aux questions de l'assistant IA pour obtenir votre niveau de triage.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span><span class="step-connector"></span>
+        <h3>Consultez un médecin</h3>
+        <p>Choisissez un praticien vérifié et lancez une téléconsultation au moment qui vous convient.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">4</span>
+        <h3>Suivez vos soins</h3>
+        <p>Recevez votre compte rendu et votre ordonnance directement dans votre espace.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Avantages -->
+<section class="section" id="avantages">
+  <div class="container adv-grid">
+    <div>
+      <span class="eyebrow">Avantages</span>
+      <h2>Pourquoi choisir MediConnect ?</h2>
+      <p class="text-muted">Une plateforme pensée avec les professionnels de santé pour offrir un accès aux soins plus rapide, plus sûr et plus humain.</p>
+      <div class="stat-strip">
+        <div><strong>24 h/24</strong><span>Accès au triage</span></div>
+        <div><strong>100 %</strong><span>Médecins contrôlés</span></div>
+        <div><strong>&lt; 15 min</strong><span>Délai moyen visé</span></div>
+      </div>
+    </div>
+    <div class="adv-list">
+      <div class="adv">
+        <span class="icon-badge icon-badge-sm"><i class="bi bi-lightning-charge"></i></span>
+        <div><h4>Gain de temps</h4><p>Moins d'attente et pas de déplacement inutile.</p></div>
+      </div>
+      <div class="adv">
+        <span class="icon-badge icon-badge-sm"><i class="bi bi-shield-lock"></i></span>
+        <div><h4>Confidentialité</h4><p>Vos données médicales sont protégées et chiffrées.</p></div>
+      </div>
+      <div class="adv">
+        <span class="icon-badge icon-badge-sm"><i class="bi bi-signpost-split"></i></span>
+        <div><h4>Orientation fiable</h4><p>Le triage priorise les situations les plus urgentes.</p></div>
+      </div>
+      <div class="adv">
+        <span class="icon-badge icon-badge-sm"><i class="bi bi-people"></i></span>
+        <div><h4>Suivi continu</h4><p>Un historique partagé entre vous et vos médecins.</p></div>
+      </div>
+      <div class="adv">
+        <span class="icon-badge icon-badge-sm"><i class="bi bi-phone"></i></span>
+        <div><h4>Accessible partout</h4><p>Ordinateur, tablette ou mobile, sans installation.</p></div>
+      </div>
+      <div class="adv">
+        <span class="icon-badge icon-badge-sm"><i class="bi bi-hospital"></i></span>
+        <div><h4>Pour les médecins</h4><p>Des demandes qualifiées grâce au pré-triage.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section section-alt" style="padding-top:64px;padding-bottom:64px">
+  <div class="container">
+    <div class="cta-band">
+      <div>
+        <h2>Prêt à prendre soin de vous ?</h2>
+        <p>Créez votre compte patient ou rejoignez notre réseau de médecins.</p>
+      </div>
+      <div class="btns">
+        <a href="{% url 'signup_patient' %}" class="btn btn-white btn-lg"><i class="bi bi-person-plus"></i> Je suis patient</a>
+        <a href="{% url 'signup_doctor' %}" class="btn btn-outline-light btn-lg"><i class="bi bi-person-badge"></i> Je suis médecin</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "core/patient/_layout.html" %}
+
+{% block title %}Nouvelle évaluation · Contexte{% endblock %}
+
+{% block content %}
+<div class="wizard-wrap">
+  <a href="{% url 'triage:home' %}" class="back-link"><i class="bi bi-arrow-left"></i> Mes évaluations</a>
+  {% include "triage/_stepper.html" %}
+
+  <section class="card">
+    <div class="card-body wizard-body">
+      <h1 class="wizard-title">Parlons de ce qui ne va pas</h1>
+      <p class="text-muted">Ces informations nous aident à mieux évaluer votre situation.</p>
+
+      <div class="emergency-banner">
+        <i class="bi bi-telephone-outbound"></i>
+        <p>En cas d'<strong>urgence vitale</strong>, n'utilisez pas ce questionnaire : appelez immédiatement le <strong>112</strong> ou le numéro d'urgence local.</p>
+      </div>
+
+      {% include "core/partials/form_errors.html" %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include "core/partials/field.html" with field=form.chief_complaint %}
+
+        <div class="form-row">
+          <div class="form-group{% if form.temperature.errors %} has-error{% endif %}">
+            <label class="form-label" for="{{ form.temperature.id_for_label }}">{{ form.temperature.label }}</label>
+            <div class="input-suffix">{{ form.temperature }}<span>°C</span></div>
+            <div class="form-help">Laissez vide si vous ne l'avez pas prise.</div>
+            {% for error in form.temperature.errors %}<div class="form-error"><i class="bi bi-exclamation-circle"></i><span>{{ error }}</span></div>{% endfor %}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <span class="form-label">Êtes-vous concerné(e) par l'une de ces situations ?</span>
+          <div class="option-grid">
+            {% for option in form.risk_factors %}
+            <label class="option-card" for="{{ option.id_for_label }}">
+              {{ option.tag }}
+              <span>{{ option.choice_label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          <div class="form-help">Facultatif. Votre âge est pris en compte automatiquement à partir de votre profil.</div>
+        </div>
+
+        <div class="wizard-actions">
+          <a href="{% url 'triage:home' %}" class="btn btn-ghost">Annuler</a>
+          <button type="submit" class="btn btn-primary btn-lg">Continuer <i class="bi bi-arrow-right"></i></button>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>
+{% endblock %}

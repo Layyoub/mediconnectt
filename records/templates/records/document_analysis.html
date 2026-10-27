@@ -1,0 +1,112 @@
+{% extends layout %}
+
+{% block title %}Analyse IA · {{ document.title }}{% endblock %}
+
+{% block content %}
+<a href="{% if room and room.is_open %}{% url 'teleconsult:room' room.code %}{% else %}{% url 'records:patient_record' patient.pk %}?onglet=documents{% endif %}" class="back-link no-print"><i class="bi bi-arrow-left"></i> {% if room and room.is_open %}Retour à la consultation{% else %}Documents de {{ patient.get_full_name }}{% endif %}</a>
+
+<div class="page-head no-print">
+  <div>
+    <h1>Compte rendu IA du document</h1>
+    <p>{{ document.title }} · {{ patient.get_full_name }}{% if patient_age is not None %}, {{ patient_age }} ans{% endif %} · partagé le {{ document.created_at|date:"j F Y à H:i" }}</p>
+  </div>
+  <div class="room-head-actions">
+    <a href="{% url 'records:document' document.pk %}" target="_blank" rel="noopener" class="btn btn-light"><i class="bi bi-file-earmark"></i> Ouvrir le document</a>
+    {% if not analysis.is_running %}
+    <form method="post">{% csrf_token %}<button type="submit" class="btn btn-light"><i class="bi bi-arrow-repeat"></i> Relancer l'analyse</button></form>
+    <button type="button" class="btn btn-primary" data-print><i class="bi bi-printer"></i> Imprimer</button>
+    {% endif %}
+  </div>
+</div>
+
+{% if analysis.is_running %}
+<section class="card" data-reload-while-running>
+  <div class="empty-state">
+    <span class="spinner spinner-dark" aria-hidden="true"></span>
+    <strong style="margin-top:.75rem">L'IA lit le document…</strong>
+    <p>Le compte rendu s'affiche ici dans quelques secondes. Cette page se met à jour toute seule.</p>
+  </div>
+</section>
+
+{% elif analysis.status == "error" or analysis.is_stale %}
+<div class="alert alert-danger"><i class="bi bi-exclamation-octagon"></i><p>L'analyse n'a pas pu aboutir{% if analysis.error %} ({{ analysis.error }}){% endif %}. Relancez-la ou lisez le document directement.</p></div>
+
+{% else %}
+<div class="dash-grid">
+  <div class="col-8">
+    <section class="card" style="margin-bottom:1.25rem">
+      <div class="card-header">
+        <h3><i class="bi bi-robot"></i> {{ analysis.document_type|default:"Document" }}</h3>
+        {% if analysis.exam_date %}<span class="small text-muted">Examen du {{ analysis.exam_date }}</span>{% endif %}
+      </div>
+      <div class="card-body">
+        {% if not analysis.readable %}
+        <div class="alert alert-danger" style="margin-top:0"><i class="bi bi-file-earmark-x"></i><p>Document illisible ou non médical.</p></div>
+        {% endif %}
+        <p class="analysis-summary">{{ analysis.summary|linebreaksbr }}</p>
+
+        {% if analysis.abnormal_findings %}
+        <div class="alert alert-danger" style="margin-bottom:0">
+          <i class="bi bi-exclamation-triangle"></i>
+          <div>
+            <p><strong>Anomalies relevées</strong></p>
+            <ul class="analysis-list">{% for item in analysis.abnormal_findings %}<li>{{ item }}</li>{% endfor %}</ul>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    {% if analysis.values %}
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-table"></i> Valeurs relevées</h3><span class="small text-muted">{{ analysis.values|length }} paramètre{{ analysis.values|length|pluralize }} · {{ analysis.abnormal_values|length }} hors normes</span></div>
+      <div class="table-wrap">
+        <table class="table analysis-table">
+          <thead><tr><th>Paramètre</th><th>Résultat</th><th>Références</th><th></th></tr></thead>
+          <tbody>
+            {% for v in analysis.values %}
+            <tr class="flag-{{ v.flag }}">
+              <td><strong>{{ v.name }}</strong>{% if v.comment %}<br><span class="small text-muted">{{ v.comment }}</span>{% endif %}</td>
+              <td class="nowrap"><strong>{{ v.value }}</strong> {{ v.unit }}</td>
+              <td class="nowrap text-muted">{{ v.reference|default:"—" }}</td>
+              <td class="nowrap">
+                {% if v.flag == "high" %}<span class="badge badge-red"><i class="bi bi-arrow-up"></i> Élevé</span>
+                {% elif v.flag == "low" %}<span class="badge badge-red"><i class="bi bi-arrow-down"></i> Bas</span>
+                {% elif v.flag == "abnormal" %}<span class="badge badge-red">Anormal</span>
+                {% elif v.flag == "normal" %}<span class="badge badge-neutral">Normal</span>
+                {% else %}<span class="badge badge-outline">?</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  <div class="col-4">
+    {% if analysis.points_to_check %}
+    <section class="card" style="margin-bottom:1.25rem">
+      <div class="card-header"><h3><i class="bi bi-list-check"></i> Points à vérifier</h3></div>
+      <div class="card-body">
+        <ul class="analysis-list">{% for item in analysis.points_to_check %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+    </section>
+    {% endif %}
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-person"></i> Contexte utilisé</h3></div>
+      <div class="card-body">
+        <dl class="dl dl-compact">
+          <dt>Allergies</dt><dd>{{ record.allergies|default:"Aucune connue" }}</dd>
+          <dt>Maladies chroniques</dt><dd>{{ record.chronic_conditions|default:"—" }}</dd>
+          <dt>Traitements</dt><dd>{{ record.current_treatments|default:"—" }}</dd>
+          {% if document.appointment %}<dt>Motif de la consultation</dt><dd>{{ document.appointment.reason }}</dd>{% endif %}
+        </dl>
+        <p class="small text-muted" style="margin:1rem 0 0">Analyse du {{ analysis.finished_at|default:analysis.created_at|date:"j F Y à H:i" }}{% if analysis.ai_model %} · {{ analysis.ai_model }}{% endif %}. Aide à la lecture générée par IA : vérifiez toujours les valeurs sur le document original. Elle ne remplace pas votre interprétation clinique.</p>
+      </div>
+    </section>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

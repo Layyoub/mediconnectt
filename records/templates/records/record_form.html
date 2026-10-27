@@ -1,0 +1,48 @@
+{% extends layout %}
+
+{% block title %}Informations médicales{% endblock %}
+
+{% block content %}
+<a href="{{ back }}" class="back-link"><i class="bi bi-arrow-left"></i> {% if role == "patient" %}Mon dossier{% else %}Dossier de {{ record.patient.get_full_name }}{% endif %}</a>
+<div class="page-head">
+  <div>
+    <h1>Informations médicales</h1>
+    <p>{% if role == "patient" %}Ces informations sont partagées uniquement avec les médecins qui vous suivent.{% else %}{{ record.patient.get_full_name }} sera prévenu(e) de la mise à jour.{% endif %}</p>
+  </div>
+</div>
+
+<div class="dash-grid">
+  <div class="col-8">
+    <section class="card">
+      <div class="card-body">
+        <form method="post" novalidate data-loading-form>
+          {% csrf_token %}
+          {% include "core/partials/form_errors.html" %}
+          <div class="form-row form-row-3">
+            {% include "core/partials/field.html" with field=form.blood_type %}
+            {% include "core/partials/field.html" with field=form.height_cm %}
+            {% include "core/partials/field.html" with field=form.weight_kg %}
+          </div>
+          {% include "core/partials/field.html" with field=form.allergies %}
+          {% include "core/partials/field.html" with field=form.chronic_conditions %}
+          {% include "core/partials/field.html" with field=form.current_treatments %}
+          {% include "core/partials/field.html" with field=form.medical_history %}
+          {% include "core/partials/field.html" with field=form.family_history %}
+          {% include "core/partials/field.html" with field=form.emergency_contact %}
+          <div class="wizard-actions">
+            <a href="{{ back }}" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary btn-lg" data-loading-text="Enregistrement…"><i class="bi bi-check2"></i> Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+  <div class="col-4">
+    <section class="card">
+      <div class="card-body">
+        <div class="alert alert-info" style="margin:0"><i class="bi bi-shield-lock"></i><p>Les allergies sont vérifiées à chaque nouvelle ordonnance : un médicament qui correspond déclenche une alerte pour le médecin.</p></div>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

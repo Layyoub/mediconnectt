@@ -1,0 +1,141 @@
+{% extends "core/patient/_layout.html" %}
+
+{% block title %}Espace patient{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Bonjour, {{ user.first_name|default:"et bienvenue" }}</h1>
+    <p>Bienvenue dans votre espace santé. Nous sommes le {% now "l j F Y" %}.</p>
+  </div>
+  <a href="{% url 'appointments:book' %}" class="btn btn-light"><i class="bi bi-calendar-plus"></i> Prendre rendez-vous</a>
+</div>
+
+<div class="dash-grid">
+  <!-- Commencer une évaluation -->
+  <div class="col-12">
+    <div class="welcome-card">
+      <div class="welcome-left">
+        <span class="icon-badge"><i class="bi bi-clipboard2-pulse"></i></span>
+        <div>
+          <h2>Vous ne vous sentez pas bien ?</h2>
+          <p>Décrivez vos symptômes à notre assistant : il évalue le niveau d'urgence et vous oriente vers la bonne prise en charge en quelques minutes.</p>
+        </div>
+      </div>
+      <a href="{% url 'triage:start' %}" class="btn btn-white btn-lg">Commencer une évaluation <i class="bi bi-arrow-right"></i></a>
+    </div>
+  </div>
+
+  <!-- Triage récent -->
+  <div class="col-5">
+    <section class="card" style="height:100%">
+      <div class="card-header">
+        <h3><i class="bi bi-activity"></i> Dernier triage</h3>
+        {% if triage %}<a href="{% url 'triage:home' %}">Historique</a>{% endif %}
+      </div>
+      {% if triage %}
+      <div class="card-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+          <span class="text-muted small">{{ triage.created_at|date:"j F Y à H:i" }}</span>
+          <span class="badge triage-{{ triage.level }}"><i class="bi bi-circle-fill" style="font-size:.5rem"></i> {{ triage.get_level_display }}</span>
+        </div>
+        {% include "triage/_scale.html" with level=triage.level %}
+        <p style="margin:1.25rem 0 .5rem;font-size:.93rem"><strong>Motif :</strong> {{ triage.session.chief_complaint|truncatechars:110 }}</p>
+        <div class="alert alert-info" style="margin-bottom:1rem"><i class="bi bi-lightbulb"></i><p>{{ triage.recommendation|truncatechars:120 }}</p></div>
+        <a href="{% url 'triage:result' triage.session_id %}" class="btn btn-primary btn-block">Voir le résultat détaillé</a>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <span class="icon-badge"><i class="bi bi-clipboard2-pulse"></i></span>
+        <strong>Aucune évaluation pour le moment</strong>
+        <p>Décrivez vos symptômes pour connaître le niveau d'urgence et être orienté.</p>
+        <a href="{% url 'triage:start' %}" class="btn btn-primary">Commencer une évaluation</a>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <!-- Prochains rendez-vous -->
+  <div class="col-7">
+    <section class="card" style="height:100%">
+      <div class="card-header">
+        <h3><i class="bi bi-calendar2-week"></i> Prochains rendez-vous</h3>
+        <a href="{% url 'appointments:list' %}">Tout voir</a>
+      </div>
+      <div class="card-body-flush">
+        {% for a in appointments %}
+        <div class="list-item">
+          <div class="date-tile"><span>{{ a.start|date:"M" }}</span><strong>{{ a.start|date:"j" }}</strong></div>
+          <div class="list-main">
+            <strong>Dr {{ a.doctor.get_full_name }}</strong>
+            <span>{{ a.specialty.name|default:"Consultation" }} · {{ a.start|date:"l" }} à {{ a.start|time:"H:i" }}</span>
+          </div>
+          {% include "appointments/_status.html" %}
+          <div class="list-actions">
+            {% if a.room.is_open %}
+            <a href="{% url 'teleconsult:room' a.room.code %}" class="btn btn-primary btn-sm"><i class="bi bi-camera-video"></i> Rejoindre</a>
+            {% else %}
+            <a href="{% url 'appointments:detail' a.pk %}" class="btn btn-light btn-sm">Détails</a>
+            {% endif %}
+          </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+          <span class="icon-badge icon-badge-neutral"><i class="bi bi-calendar-x"></i></span>
+          <strong>Aucun rendez-vous prévu</strong>
+          <p>Choisissez un médecin et un créneau, ou commencez par une évaluation de vos symptômes pour être orienté.</p>
+          <a href="{% url 'appointments:book' %}" class="btn btn-primary">Prendre rendez-vous</a>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <!-- Historique des consultations -->
+  <div class="col-7">
+    <section class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-clock-history"></i> Historique des consultations</h3>
+        <a href="{% url 'teleconsult:list' %}">Tout voir</a>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Date</th><th>Médecin</th><th>Diagnostic</th><th></th></tr></thead>
+          <tbody>
+            {% for room in consultations %}
+            <tr>
+              <td class="nowrap">{{ room.appointment.start|date:"j M Y" }}</td>
+              <td><strong>Dr {{ room.appointment.doctor.get_full_name }}</strong></td>
+              <td>{{ room.summary.diagnosis|default:"—"|truncatechars:50 }}</td>
+              <td><a href="{% url 'teleconsult:summary' room.code %}" class="btn btn-ghost btn-sm" aria-label="Voir le compte rendu"><i class="bi bi-file-earmark-text"></i></a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-muted">Aucune consultation terminée pour le moment.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Ordonnances -->
+  <div class="col-5">
+    <section class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-capsule"></i> Mes ordonnances</h3>
+        <a href="{% url 'records:prescriptions' %}">Tout voir</a>
+      </div>
+      <div class="card-body-flush">
+        {% for p in prescriptions %}
+        {% include "records/_prescription_row.html" %}
+        {% empty %}
+        <div class="empty-state">
+          <span class="icon-badge icon-badge-neutral"><i class="bi bi-capsule"></i></span>
+          <strong>Aucune ordonnance</strong>
+          <p>Vos ordonnances apparaîtront ici après vos consultations.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

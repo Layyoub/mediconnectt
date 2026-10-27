@@ -1,0 +1,91 @@
+{% extends "core/patient/_layout.html" %}
+
+{% block title %}Prendre rendez-vous{% endblock %}
+
+{% block content %}
+<a href="{% url 'appointments:list' %}" class="back-link"><i class="bi bi-arrow-left"></i> Mes rendez-vous</a>
+<div class="page-head">
+  <div>
+    <h1>Prendre rendez-vous</h1>
+    <p>Choisissez une spécialité puis un médecin. Les créneaux sont proposés sur les {{ booking_days }} prochains jours.</p>
+  </div>
+</div>
+
+<div class="book-steps">
+  <span class="current"><i class="bi bi-1-circle"></i> Médecin</span>
+  <span><i class="bi bi-2-circle"></i> Créneau</span>
+  <span><i class="bi bi-3-circle"></i> Validation par le médecin</span>
+</div>
+
+{% if triage %}
+  {% if triage.result.level == "urgent" %}
+  <div class="emergency-banner" style="margin-bottom:1.25rem">
+    <i class="bi bi-telephone-outbound"></i>
+    <p><strong>Votre évaluation indique une urgence.</strong> Une téléconsultation n'est pas adaptée : appelez immédiatement le <strong>112</strong> ou le numéro d'urgence local.</p>
+  </div>
+  {% else %}
+  <div class="alert alert-info" style="margin-bottom:1.25rem">
+    <i class="bi bi-clipboard2-pulse"></i>
+    <p>Suite à votre évaluation du {{ triage.completed_at|date:"j F" }} (niveau <strong>{{ triage.result.get_level_display|lower }}</strong>), nous vous conseillons : <strong>{{ triage.result.get_suggested_specialty_display }}</strong>. Elle sera partagée avec le médecin.</p>
+  </div>
+  {% endif %}
+{% endif %}
+
+<section class="card" style="margin-bottom:1.25rem">
+  <div class="card-body">
+    <div class="spec-chips">
+      <a href="?specialite={% if triage %}&triage={{ triage.pk }}{% endif %}" class="spec-chip{% if not selected %} active{% endif %}"><i class="bi bi-grid"></i> Toutes</a>
+      {% for s in specialties %}
+      <a href="?specialite={{ s.code }}{% if triage %}&triage={{ triage.pk }}{% endif %}" class="spec-chip{% if selected == s %} active{% elif not s.doctor_count %} is-empty{% endif %}" title="{{ s.description }}">
+        <i class="bi bi-{{ s.icon }}"></i> {{ s.name }} <small>{{ s.doctor_count }}</small>
+      </a>
+      {% endfor %}
+    </div>
+    <form method="get" class="input-icon" style="margin-top:1rem">
+      <i class="bi bi-search"></i>
+      {% if selected %}<input type="hidden" name="specialite" value="{{ selected.code }}">{% endif %}
+      {% if triage %}<input type="hidden" name="triage" value="{{ triage.pk }}">{% endif %}
+      <input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Rechercher un médecin ou une ville…" aria-label="Rechercher un médecin">
+    </form>
+  </div>
+</section>
+
+{% if doctors %}
+<div class="doctor-grid">
+  {% for d in doctors %}
+  <article class="card doctor-card">
+    <div class="doctor-head">
+      <span class="avatar">{{ d.user.first_name|slice:":1"|upper }}{{ d.user.last_name|slice:":1"|upper }}</span>
+      <div>
+        <h3>Dr {{ d.user.get_full_name }} <i class="bi bi-patch-check-fill text-red" title="Médecin vérifié par MediConnect"></i></h3>
+        <p>{{ d.get_specialty_display }}</p>
+      </div>
+    </div>
+    <div class="doctor-meta">
+      <span><i class="bi bi-geo-alt"></i>{{ d.city }}</span>
+      <span><i class="bi bi-briefcase"></i>{{ d.years_experience }} an{{ d.years_experience|pluralize }} d'expérience</span>
+      <span><i class="bi bi-camera-video"></i>Téléconsultation</span>
+    </div>
+    {% if d.bio %}<p class="doctor-bio">{{ d.bio|truncatechars:140 }}</p>{% endif %}
+    <div class="doctor-foot">
+      <div class="next-slot">
+        {% if d.next_slot %}Prochaine disponibilité<strong>{{ d.next_slot.0|date:"l j F" }} à {{ d.next_slot.0|time:"H:i" }}</strong>{% else %}<strong>Aucun créneau libre</strong>sur les {{ booking_days }} prochains jours{% endif %}
+      </div>
+      {% if d.next_slot %}
+      <a href="{% url 'appointments:doctor_slots' d.pk %}{% if triage %}?triage={{ triage.pk }}{% endif %}" class="btn btn-primary btn-sm">Choisir un créneau <i class="bi bi-arrow-right"></i></a>
+      {% endif %}
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<section class="card">
+  <div class="empty-state">
+    <span class="icon-badge icon-badge-neutral"><i class="bi bi-person-x"></i></span>
+    <strong>Aucun médecin trouvé</strong>
+    <p>{% if selected %}Aucun médecin vérifié en {{ selected.name|lower }} pour le moment.{% else %}Essayez une autre recherche.{% endif %} Un médecin généraliste peut vous orienter.</p>
+    <a href="?specialite=general{% if triage %}&triage={{ triage.pk }}{% endif %}" class="btn btn-light">Voir les généralistes</a>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

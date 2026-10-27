@@ -1,0 +1,62 @@
+{% extends "core/doctor/_layout.html" %}
+
+{% block title %}Agenda{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Agenda</h1>
+    <p>Vos téléconsultations confirmées.</p>
+  </div>
+  <a href="{% url 'appointments:availability' %}" class="btn btn-primary"><i class="bi bi-calendar-plus"></i> Gérer mes disponibilités</a>
+</div>
+
+<div class="dash-grid">
+  <div class="col-7">
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-calendar2-week"></i> À venir</h3><span class="small text-muted">{{ upcoming|length }} rendez-vous</span></div>
+      <div class="card-body-flush">
+        {% regroup upcoming by local_day as days %}
+        {% for day in days %}
+        <div class="day-label">{% if day.grouper == today %}Aujourd'hui{% else %}{{ day.grouper|date:"l j F"|capfirst }}{% endif %}</div>
+        {% for a in day.list %}
+        <div class="list-item">
+          <div class="list-meta" style="text-align:left;min-width:64px"><strong>{{ a.start|time:"H:i" }}</strong>{{ a.duration_minutes }} min</div>
+          <div class="list-main">
+            <strong>{{ a.patient.get_full_name }}</strong>
+            <span>{{ a.reason|truncatechars:70 }}</span>
+          </div>
+          {% if a.triage_session %}<span class="badge triage-{{ a.triage_session.result.level }}">{{ a.triage_session.result.get_level_display }}</span>{% endif %}
+          <a href="{% url 'appointments:detail' a.pk %}" class="btn btn-light btn-sm">Ouvrir</a>
+        </div>
+        {% endfor %}
+        {% empty %}
+        <div class="empty-state">
+          <span class="icon-badge icon-badge-neutral"><i class="bi bi-calendar-x"></i></span>
+          <strong>Aucun rendez-vous confirmé</strong>
+          <p>Les demandes que vous acceptez apparaissent ici.</p>
+          <a href="{% url 'appointments:requests' %}" class="btn btn-light">Voir les demandes</a>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <div class="col-5">
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-clock-history"></i> Derniers rendez-vous</h3></div>
+      <div class="card-body-flush">
+        {% for a in past %}
+        <div class="list-item">
+          <div class="date-tile"><span>{{ a.start|date:"M" }}</span><strong>{{ a.start|date:"j" }}</strong></div>
+          <div class="list-main"><strong>{{ a.patient.get_full_name }}</strong><span>{{ a.start|time:"H:i" }} · {{ a.reason|truncatechars:40 }}</span></div>
+          <a href="{% url 'appointments:detail' a.pk %}" class="btn btn-ghost btn-sm" aria-label="Voir"><i class="bi bi-chevron-right"></i></a>
+        </div>
+        {% empty %}
+        <div class="empty-state"><span class="icon-badge icon-badge-neutral"><i class="bi bi-clock-history"></i></span><strong>Aucun historique</strong><p>Vos rendez-vous passés apparaîtront ici.</p></div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends layout %}
+
+{% block title %}{% if role == "doctor" %}Profil professionnel{% else %}Mon profil{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{% if role == "doctor" %}Profil professionnel{% else %}Mon profil{% endif %}</h1>
+    <p>{% if role == "doctor" %}Ces informations sont présentées aux patients quand ils choisissent un médecin.{% else %}Vos informations personnelles. Elles figurent sur vos ordonnances et comptes rendus.{% endif %}</p>
+  </div>
+  <a href="{% url 'account_settings' %}" class="btn btn-light"><i class="bi bi-shield-lock"></i> E-mail et mot de passe</a>
+</div>
+
+<div class="dash-grid">
+  <div class="col-8">
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-person-lines-fill"></i> {% if role == "doctor" %}Identité et cabinet{% else %}Informations personnelles{% endif %}</h3></div>
+      <div class="card-body">
+        <form method="post" novalidate data-loading-form>
+          {% csrf_token %}
+          {% include "core/partials/form_errors.html" %}
+          <div class="form-row">
+            {% include "core/partials/field.html" with field=form.first_name %}
+            {% include "core/partials/field.html" with field=form.last_name %}
+          </div>
+          {% if role == "doctor" %}
+          <div class="form-row">
+            {% include "core/partials/field.html" with field=form.phone icon="telephone" %}
+            {% include "core/partials/field.html" with field=form.years_experience %}
+          </div>
+          <div class="form-row">
+            {% include "core/partials/field.html" with field=form.city icon="geo-alt" %}
+            {% include "core/partials/field.html" with field=form.practice_address %}
+          </div>
+          {% include "core/partials/field.html" with field=form.bio %}
+          {% else %}
+          {% include "core/partials/field.html" with field=form.phone icon="telephone" %}
+          <div class="form-row">
+            {% include "core/partials/field.html" with field=form.date_of_birth %}
+            {% include "core/partials/field.html" with field=form.gender %}
+          </div>
+          {% endif %}
+          <div class="wizard-actions">
+            <span></span>
+            <button type="submit" class="btn btn-primary btn-lg" data-loading-text="Enregistrement…"><i class="bi bi-check2"></i> Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <div class="col-4">
+    <section class="card" style="margin-bottom:1.25rem">
+      <div class="card-body profile-card">
+        <span class="avatar avatar-lg">{{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}</span>
+        <h3>{% if role == "doctor" %}Dr {% endif %}{{ user.get_full_name }}</h3>
+        <p>{{ user.email }}</p>
+        {% if role == "doctor" %}
+          {% if instance.is_verified %}<span class="badge badge-verified"><i class="bi bi-patch-check"></i> Compte vérifié</span>
+          {% elif instance.status == "rejected" %}<span class="badge badge-dark">Dossier refusé</span>
+          {% else %}<span class="badge badge-soft">En cours de vérification</span>{% endif %}
+        {% else %}
+          <span class="badge badge-neutral">Patient</span>
+        {% endif %}
+        <p class="small text-muted" style="margin:.9rem 0 0">Membre depuis {{ user.date_joined|date:"F Y" }}</p>
+      </div>
+    </section>
+
+    {% if role == "doctor" %}
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-patch-check"></i> Informations vérifiées</h3></div>
+      <div class="card-body">
+        <dl class="dl dl-compact">
+          <dt>Spécialité</dt><dd>{{ instance.get_specialty_display }}</dd>
+          <dt>N° d'inscription à l'Ordre</dt><dd>{{ instance.license_number }}</dd>
+        </dl>
+        {% if instance.status == "rejected" and instance.rejection_reason %}
+        <div class="alert alert-danger" style="margin:1rem 0 0"><i class="bi bi-x-circle"></i><p><strong>Motif du refus :</strong> {{ instance.rejection_reason }}</p></div>
+        {% endif %}
+        <p class="small text-muted" style="margin:1rem 0 0">Ces informations ont été contrôlées par notre équipe à partir de vos justificatifs. Pour les modifier, contactez l'administration MediConnect.</p>
+      </div>
+    </section>
+    {% else %}
+    <section class="card">
+      <div class="card-body">
+        <div class="alert alert-info" style="margin:0"><i class="bi bi-heart-pulse"></i><p>Allergies, traitements, antécédents : ces informations se trouvent dans votre <a href="{% url 'records:my_record' %}">dossier médical</a>.</p></div>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "core/auth/_layout.html" %}
+
+{% block title %}Connexion{% endblock %}
+
+{% block content %}
+<div class="auth-box">
+  <div class="auth-card">
+    <div class="auth-head">
+      <span class="icon-badge"><i class="bi bi-box-arrow-in-right"></i></span>
+      <h1>Bon retour parmi nous</h1>
+      <p>Connectez-vous à votre espace patient ou médecin.</p>
+    </div>
+
+    {% include "core/partials/messages.html" %}
+    {% include "core/partials/form_errors.html" %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "core/partials/field.html" with field=form.username icon="envelope" %}
+      {% include "core/partials/field.html" with field=form.password %}
+      <div class="auth-inline">
+        <span></span>
+        <a href="{% url 'password_reset' %}">Mot de passe oublié ?</a>
+      </div>
+      <input type="hidden" name="next" value="{{ next }}">
+      <button type="submit" class="btn btn-primary btn-block btn-lg">Se connecter</button>
+    </form>
+
+    <div class="divider">Nouveau sur MediConnect ?</div>
+    <div class="form-row">
+      <a href="{% url 'signup_patient' %}" class="btn btn-light"><i class="bi bi-person"></i> Compte patient</a>
+      <a href="{% url 'signup_doctor' %}" class="btn btn-light"><i class="bi bi-person-badge"></i> Compte médecin</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

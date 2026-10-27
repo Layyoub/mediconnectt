@@ -1,0 +1,57 @@
+{% extends "core/backoffice/_layout.html" %}
+
+{% block title %}Médecins · Back-office{% endblock %}
+{% block breadcrumb %}<a href="{% url 'backoffice:overview' %}">Back-office</a><i class="bi bi-chevron-right small"></i><strong>Médecins</strong>{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Médecins</h1>
+    <p>Vérifiez les dossiers professionnels et gérez les comptes médecins.</p>
+  </div>
+</div>
+
+<section class="card">
+  <div class="toolbar">
+    <nav class="tabs" aria-label="Filtrer par statut">
+      <a href="?{% if query %}q={{ query|urlencode }}{% endif %}" class="{% if not status %}active{% endif %}">Tous</a>
+      {% for value, label in status_choices %}
+      <a href="?statut={{ value }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="{% if status == value %}active{% endif %}">{{ label }}</a>
+      {% endfor %}
+    </nav>
+    <form method="get" role="search">
+      {% if status %}<input type="hidden" name="statut" value="{{ status }}">{% endif %}
+      <div class="input-icon" style="flex:1">
+        <i class="bi bi-search"></i>
+        <input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Nom, e-mail, n° d'Ordre, ville…" aria-label="Rechercher un médecin">
+      </div>
+      <button class="btn btn-light btn-sm" type="submit">Rechercher</button>
+    </form>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Médecin</th><th>Spécialité</th><th>N° d'Ordre</th><th>Ville</th><th>Soumis le</th><th>Statut</th><th></th></tr></thead>
+      <tbody>
+        {% for d in doctors %}
+        <tr>
+          <td>
+            <div class="person">
+              <span class="avatar">{{ d.user.first_name|slice:":1"|upper }}{{ d.user.last_name|slice:":1"|upper }}</span>
+              <div><strong>Dr {{ d.user.get_full_name }}</strong><span>{{ d.user.email }}</span></div>
+            </div>
+          </td>
+          <td>{{ d.get_specialty_display }}</td>
+          <td><code>{{ d.license_number }}</code></td>
+          <td>{{ d.city }}</td>
+          <td>{{ d.submitted_at|date:"j M Y" }}</td>
+          <td class="nowrap">{% include "core/backoffice/_status_badge.html" with status=d.status %}{% if d.ai_risk %}<br><span class="badge verif-badge-{{ d.ai_risk }}" style="margin-top:.35rem" title="Analyse automatique du dossier"><i class="bi bi-robot"></i> Risque {% if d.ai_risk == "low" %}faible{% elif d.ai_risk == "medium" %}moyen{% else %}élevé{% endif %}</span>{% endif %}</td>
+          <td><a href="{% url 'backoffice:doctor_detail' d.pk %}" class="btn {% if d.status == 'pending' %}btn-primary{% else %}btn-light{% endif %} btn-sm">{% if d.status == 'pending' %}Examiner{% else %}Voir{% endif %}</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7"><div class="empty-state"><span class="icon-badge icon-badge-neutral"><i class="bi bi-search"></i></span><strong>Aucun médecin trouvé</strong><p>Modifiez les filtres ou la recherche.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

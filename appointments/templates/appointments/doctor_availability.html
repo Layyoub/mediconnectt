@@ -1,0 +1,67 @@
+{% extends "core/doctor/_layout.html" %}
+
+{% block title %}Mes disponibilités{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Mes disponibilités</h1>
+    <p>Définissez vos plages hebdomadaires de téléconsultation. Les patients réservent des créneaux à l'intérieur de ces plages, puis vous validez chaque demande.</p>
+  </div>
+</div>
+
+<div class="dash-grid">
+  <div class="col-8">
+    <section class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-calendar-week"></i> Semaine type</h3>
+        <span class="small text-muted">{{ free_count }} créneau{{ free_count|pluralize:"x" }} libre{{ free_count|pluralize }} sur {{ booking_days }} jours</span>
+      </div>
+      {% if not has_rules %}
+      <div class="card-body" style="padding-bottom:0">
+        <div class="alert alert-info"><i class="bi bi-info-circle"></i><p>Vous n'avez encore aucune disponibilité : les patients ne peuvent pas réserver avec vous. Ajoutez une première plage.</p></div>
+      </div>
+      {% endif %}
+      <div class="card-body-flush">
+        {% for day in week %}
+        <div class="week-row{% if not day.rules %} is-off{% endif %}">
+          <h4>{{ day.label }}</h4>
+          <div class="week-ranges">
+            {% for r in day.rules %}
+            <span class="range-pill">
+              {{ r.start_time|time:"H:i" }} – {{ r.end_time|time:"H:i" }} <small>· {{ r.get_slot_minutes_display }}</small>
+              <form method="post" action="{% url 'appointments:delete_availability' r.pk %}" data-confirm="Supprimer cette plage ?">
+                {% csrf_token %}
+                <button type="submit" aria-label="Supprimer la plage du {{ day.label|lower }} {{ r.start_time|time:'H:i' }}"><i class="bi bi-x-lg"></i></button>
+              </form>
+            </span>
+            {% empty %}
+            <span class="small text-muted">Indisponible</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <div class="col-4">
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-plus-circle"></i> Ajouter une plage</h3></div>
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% include "core/partials/form_errors.html" %}
+          {% include "core/partials/field.html" with field=form.weekday %}
+          <div class="form-row">
+            {% include "core/partials/field.html" with field=form.start_time %}
+            {% include "core/partials/field.html" with field=form.end_time %}
+          </div>
+          {% include "core/partials/field.html" with field=form.slot_minutes %}
+          <button type="submit" class="btn btn-primary btn-block"><i class="bi bi-plus-lg"></i> Ajouter</button>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

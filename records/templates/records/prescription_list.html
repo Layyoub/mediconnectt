@@ -1,0 +1,40 @@
+{% extends layout %}
+
+{% block title %}Ordonnances{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{% if role == "patient" %}Mes ordonnances{% else %}Ordonnances rédigées{% endif %}</h1>
+    <p>{% if role == "patient" %}Toutes les ordonnances de vos médecins. Ouvrez-en une pour l'imprimer ou l'enregistrer en PDF.{% else %}Les ordonnances que vous avez rédigées, tous patients confondus.{% endif %}</p>
+  </div>
+  {% if role == "doctor" %}<a href="{% url 'records:patients' %}" class="btn btn-light"><i class="bi bi-people"></i> Mes patients</a>{% endif %}
+</div>
+
+<section class="card">
+  {% if prescriptions %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Date</th><th>{% if role == "patient" %}Médecin{% else %}Patient{% endif %}</th><th>Médicaments</th><th>Statut</th><th></th></tr></thead>
+      <tbody>
+        {% for p in prescriptions %}
+        <tr>
+          <td class="nowrap">{{ p.created_at|date:"j M Y" }}<br><span class="small text-muted">{{ p.code }}</span></td>
+          <td class="nowrap"><strong>{% if role == "patient" %}Dr {{ p.doctor.get_full_name|default:"—" }}{% else %}{{ p.record.patient.get_full_name }}{% endif %}</strong></td>
+          <td>{% for item in p.items.all %}{{ item.drug_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+          <td class="nowrap">{% if p.is_valid %}<span class="badge badge-soft">Valable</span>{% else %}<span class="badge badge-neutral">Expirée</span>{% endif %}</td>
+          <td class="nowrap"><a href="{% url 'records:prescription' p.code %}" class="btn btn-light btn-sm"><i class="bi bi-eye"></i> Voir</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <span class="icon-badge icon-badge-neutral"><i class="bi bi-capsule"></i></span>
+    <strong>Aucune ordonnance</strong>
+    <p>{% if role == "patient" %}Vos ordonnances apparaîtront ici après vos consultations.{% else %}Ouvrez le dossier d'un patient pour rédiger une ordonnance.{% endif %}</p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

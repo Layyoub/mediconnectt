@@ -1,0 +1,7 @@
+<div class="triage-scale" aria-hidden="true">
+  <span class="on-low"></span>
+  <span class="{% if level != 'low' %}on-moderate{% endif %}"></span>
+  <span class="{% if level == 'high' or level == 'urgent' %}on-high{% endif %}"></span>
+  <span class="{% if level == 'urgent' %}on-urgent{% endif %}"></span>
+</div>
+<div class="triage-scale-labels"><span>Faible</span><span>Modéré</span><span>Élevé</span><span>Urgent</span></div>

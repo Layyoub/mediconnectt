@@ -1,0 +1,37 @@
+{% extends "core/auth/_layout.html" %}
+
+{% block title %}Inscription{% endblock %}
+
+{% block content %}
+<div class="auth-box auth-box-wide" style="margin:auto">
+  <div class="auth-head" style="text-align:center">
+    <h1>Créer votre compte</h1>
+    <p>Choisissez le type de compte qui vous correspond.</p>
+  </div>
+  <div class="choice-grid">
+    <a href="{% url 'signup_patient' %}" class="choice-card">
+      <span class="icon-badge"><i class="bi bi-person-heart"></i></span>
+      <h3>Je suis patient</h3>
+      <p>Évaluez vos symptômes et consultez un médecin en ligne.</p>
+      <ul>
+        <li><i class="bi bi-check2"></i> Triage des symptômes par IA</li>
+        <li><i class="bi bi-check2"></i> Téléconsultations</li>
+        <li><i class="bi bi-check2"></i> Ordonnances en ligne</li>
+      </ul>
+      <span class="choice-cta">Créer un compte patient <i class="bi bi-arrow-right"></i></span>
+    </a>
+    <a href="{% url 'signup_doctor' %}" class="choice-card">
+      <span class="icon-badge icon-badge-solid"><i class="bi bi-person-badge"></i></span>
+      <h3>Je suis médecin</h3>
+      <p>Rejoignez le réseau et recevez des demandes déjà pré-triées.</p>
+      <ul>
+        <li><i class="bi bi-check2"></i> Profil professionnel vérifié</li>
+        <li><i class="bi bi-check2"></i> Agenda de téléconsultation</li>
+        <li><i class="bi bi-check2"></i> Comptes rendus &amp; ordonnances</li>
+      </ul>
+      <span class="choice-cta">Créer un compte médecin <i class="bi bi-arrow-right"></i></span>
+    </a>
+  </div>
+  <p class="auth-foot">Déjà inscrit ? <a href="{% url 'login' %}">Se connecter</a></p>
+</div>
+{% endblock %}

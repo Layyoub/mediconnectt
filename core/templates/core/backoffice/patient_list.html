@@ -1,0 +1,49 @@
+{% extends "core/backoffice/_layout.html" %}
+
+{% block title %}Patients · Back-office{% endblock %}
+{% block breadcrumb %}<a href="{% url 'backoffice:overview' %}">Back-office</a><i class="bi bi-chevron-right small"></i><strong>Patients</strong>{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Patients</h1>
+    <p>{{ patients|length }} patient{{ patients|length|pluralize }}{% if query %} pour « {{ query }} »{% endif %}.</p>
+  </div>
+</div>
+
+<section class="card">
+  <div class="toolbar">
+    <span class="small text-muted">Comptes patients inscrits sur la plateforme</span>
+    <form method="get" role="search">
+      <div class="input-icon" style="flex:1">
+        <i class="bi bi-search"></i>
+        <input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Nom, e-mail, téléphone…" aria-label="Rechercher un patient">
+      </div>
+      <button class="btn btn-light btn-sm" type="submit">Rechercher</button>
+    </form>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Patient</th><th>Téléphone</th><th>Date de naissance</th><th>Inscrit le</th><th>Statut</th></tr></thead>
+      <tbody>
+        {% for p in patients %}
+        <tr>
+          <td>
+            <div class="person">
+              <span class="avatar avatar-neutral">{{ p.user.first_name|slice:":1"|upper }}{{ p.user.last_name|slice:":1"|upper }}</span>
+              <div><strong>{{ p.user.get_full_name }}</strong><span>{{ p.user.email }}</span></div>
+            </div>
+          </td>
+          <td>{{ p.phone }}</td>
+          <td>{{ p.date_of_birth|date:"j M Y"|default:"—" }}</td>
+          <td>{{ p.created_at|date:"j M Y" }}</td>
+          <td>{% if p.user.is_active %}<span class="badge badge-outline">Actif</span>{% else %}<span class="badge badge-neutral">Désactivé</span>{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5"><div class="empty-state"><span class="icon-badge icon-badge-neutral"><i class="bi bi-people"></i></span><strong>Aucun patient trouvé</strong><p>{% if query %}Essayez une autre recherche.{% else %}Les inscriptions apparaîtront ici.{% endif %}</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

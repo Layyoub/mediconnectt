@@ -1,0 +1,102 @@
+{% extends "core/patient/_layout.html" %}
+
+{% block title %}Résultat de l'évaluation{% endblock %}
+
+{% block content %}
+<div class="wizard-wrap wizard-wide">
+  <a href="{% url 'triage:home' %}" class="back-link"><i class="bi bi-arrow-left"></i> Mes évaluations</a>
+  {% include "triage/_stepper.html" %}
+
+  <!-- Niveau -->
+  <section class="result-hero result-{{ result.level }}">
+    <div class="result-level">
+      <span class="result-icon">
+        {% if result.level == "urgent" %}<i class="bi bi-exclamation-octagon"></i>{% elif result.level == "high" %}<i class="bi bi-exclamation-triangle"></i>{% elif result.level == "moderate" %}<i class="bi bi-clipboard2-pulse"></i>{% else %}<i class="bi bi-check2-circle"></i>{% endif %}
+      </span>
+      <div>
+        <span class="result-kicker">Niveau d'urgence</span>
+        <h1>{{ result.get_level_display }}</h1>
+        <p>{{ result.recommendation }}</p>
+      </div>
+    </div>
+    {% if result.level == "urgent" %}
+    <a href="tel:112" class="btn btn-white btn-lg"><i class="bi bi-telephone-fill"></i> Appeler le 112</a>
+    {% endif %}
+  </section>
+
+  <div class="dash-grid">
+    <div class="col-7">
+      {% if red_flags %}
+      <section class="card" style="margin-bottom:1.25rem">
+        <div class="card-header"><h3><i class="bi bi-exclamation-triangle"></i> Signes d'alerte détectés</h3></div>
+        <div class="card-body">
+          {% for flag in red_flags %}
+          <div class="alert alert-error"><i class="bi bi-flag-fill"></i><div><p><strong>{{ flag.name }}</strong></p><p>{{ flag.message }}</p></div></div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if result.summary %}
+      <section class="card ai-card" style="margin-bottom:1.25rem">
+        <div class="card-header"><h3><i class="bi bi-stars"></i> Analyse de l'assistant IA</h3><span class="badge badge-soft"><i class="bi bi-cpu"></i> IA</span></div>
+        <div class="card-body">
+          <p class="ai-summary">{{ result.summary }}</p>
+          {% if result.warning_signs %}
+          <div class="ai-warning">
+            <strong><i class="bi bi-bell"></i> Consultez en urgence si vous remarquez :</strong>
+            <ul>{% for sign in result.warning_signs %}<li>{{ sign }}</li>{% endfor %}</ul>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
+      <section class="card">
+        <div class="card-header"><h3><i class="bi bi-list-check"></i> Ce qui a été pris en compte</h3><span class="small text-muted">Score des règles : {{ result.score }}</span></div>
+        <div class="card-body-flush">
+          {% for reason in result.reasons %}
+          <div class="list-item">
+            <span class="reason-dot"></span>
+            <div class="list-main"><span style="color:var(--text);font-size:.92rem">{{ reason.label }}</span></div>
+            {% if reason.points %}<span class="badge badge-neutral">+{{ reason.points }}</span>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+
+    <div class="col-5">
+      <section class="card" style="margin-bottom:1.25rem">
+        <div class="card-header"><h3><i class="bi bi-signpost-split"></i> Orientation</h3></div>
+        <div class="card-body">
+          {% include "triage/_scale.html" with level=result.level %}
+          <div class="orientation">
+            <span class="icon-badge"><i class="bi bi-person-badge"></i></span>
+            <div><span class="small text-muted">Spécialité conseillée</span><strong>{{ result.get_suggested_specialty_display }}</strong></div>
+          </div>
+          {% if result.level != "urgent" %}
+          <a href="{% url 'appointments:book' %}?triage={{ session.pk }}" class="btn btn-primary btn-block"><i class="bi bi-calendar-plus"></i> Prendre rendez-vous</a>
+          <p class="form-help" style="text-align:center">Nous vous proposons des médecins de cette spécialité. Votre évaluation leur sera transmise.</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header"><h3><i class="bi bi-journal-medical"></i> Récapitulatif</h3></div>
+        <div class="card-body">
+          <p class="small" style="margin-bottom:.75rem"><strong>Motif :</strong> {{ session.chief_complaint }}</p>
+          <ul class="review-list review-list-compact">
+            {% for e in entries %}
+            <li><i class="bi bi-{{ e.info.icon }}"></i><strong>{{ e.get_symptom_display }}</strong><span class="text-muted small">{{ e.get_severity_display }} · {{ e.get_duration_display }}</span></li>
+            {% endfor %}
+          </ul>
+          <p class="small text-muted" style="margin:1rem 0 0">Évaluation du {{ session.completed_at|date:"j F Y à H:i" }}{% if session.temperature %} · {{ session.temperature }} °C{% endif %}</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <p class="disclaimer"><i class="bi bi-info-circle"></i> Cette évaluation est un outil d'orientation automatisé{% if result.by_ai %} (assistant IA encadré par des règles médicales de sécurité){% endif %} : elle ne constitue pas un diagnostic et ne remplace pas l'avis d'un médecin. Si vos symptômes s'aggravent, consultez sans attendre.</p>
+</div>
+{% endblock %}

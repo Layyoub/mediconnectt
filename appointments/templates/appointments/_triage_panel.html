@@ -1,0 +1,30 @@
+{% comment %}Assessment shared with the doctor. Params: session, entries, red_flags.{% endcomment %}
+{% with result=session.result %}
+<section class="card" style="margin-bottom:1.25rem">
+  <div class="card-header"><h3><i class="bi bi-clipboard2-pulse"></i> Évaluation partagée par le patient</h3><span class="badge triage-{{ result.level }}">{{ result.get_level_display }}</span></div>
+  <div class="card-body">
+    {% include "triage/_scale.html" with level=result.level %}
+    <p class="small text-muted" style="margin:1rem 0 .75rem">Évaluation du {{ session.completed_at|date:"j F Y à H:i" }} · score {{ result.score }}{% if result.by_ai %} · analyse IA{% endif %}</p>
+    <dl class="dl">
+      <dt>Motif</dt><dd>{{ session.chief_complaint }}</dd>
+      <dt>Température</dt><dd>{% if session.temperature %}{{ session.temperature }} °C{% else %}Non mesurée{% endif %}</dd>
+      <dt>Âge</dt><dd>{% if session.age is not None %}{{ session.age }} ans{% else %}Non renseigné{% endif %}</dd>
+      <dt>Facteurs de risque</dt><dd>{{ session.risk_factor_labels|join:", "|default:"Aucun" }}</dd>
+      <dt>Orientation</dt><dd>{{ result.get_suggested_specialty_display }}</dd>
+    </dl>
+    {% if entries %}
+    <ul class="review-list review-list-compact" style="margin-top:1rem">
+      {% for e in entries %}
+      <li><i class="bi bi-{{ e.info.icon }}"></i><strong>{{ e.get_symptom_display }}</strong><span class="text-muted small">{{ e.get_severity_display }} · {{ e.get_duration_display }}</span></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% for flag in red_flags %}
+    <div class="alert alert-error" style="margin:1rem 0 0"><i class="bi bi-flag-fill"></i><div><p><strong>{{ flag.name }}</strong></p><p>{{ flag.message }}</p></div></div>
+    {% endfor %}
+    {% if result.summary %}
+    <div class="ai-warning" style="margin-top:1rem"><strong><i class="bi bi-stars"></i> Synthèse de l'assistant IA</strong><p style="margin:0">{{ result.summary }}</p></div>
+    {% endif %}
+  </div>
+</section>
+{% endwith %}

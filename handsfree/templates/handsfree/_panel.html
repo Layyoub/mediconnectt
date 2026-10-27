@@ -1,0 +1,52 @@
+{% load static %}
+{% if not dialogs_only %}
+<fieldset class="a11y-group hf-settings" data-hf-settings data-core-url="{% static 'handsfree/handsfree-core.js' %}?v={{ asset_version }}">
+  <legend><i class="bi bi-hand-index-thumb"></i> Navigation mains libres</legend>
+  <p class="form-help">Le suivi du regard et des mains utilise MediaPipe dans ce navigateur. La caméra reste locale ; aucune image n'est enregistrée ni envoyée. Alt+Maj+G : activer/désactiver.</p>
+  <div class="segmented hf-modes" role="radiogroup" aria-label="Mode de navigation mains libres">
+    <label><input type="radio" name="hf-mode" value="off" checked><span>Désactivé</span></label>
+    <label><input type="radio" name="hf-mode" value="eyes"><span>Yeux</span></label>
+    <label><input type="radio" name="hf-mode" value="hands"><span>Mains</span></label>
+    <label><input type="radio" name="hf-mode" value="combined"><span>Yeux + mains (recommandé)</span></label>
+  </div>
+  <label class="hf-control">
+    <span>Taille du pointeur : <strong data-hf-size-value>42 px</strong></span>
+    <input type="range" min="32" max="64" step="2" value="42" data-hf-size>
+  </label>
+  <div class="hf-controls">
+    <button type="button" class="btn btn-light btn-sm" data-hf-calibrate>Calibrer le clignement</button>
+    <label class="a11y-switch hf-preview-control">
+      <input type="checkbox" role="switch" data-hf-preview>
+      <span class="a11y-switch-track" aria-hidden="true"></span>
+      <span><strong>Aperçu caméra</strong><small>Visible uniquement sur cet écran.</small></span>
+    </label>
+  </div>
+  <p class="form-help" data-hf-message role="status">Navigation mains libres désactivée.</p>
+</fieldset>
+{% endif %}
+{% if dialogs_only %}
+<dialog class="ai-dialog hf-dialog" data-hf-consent aria-labelledby="hf-consent-title">
+  <div class="ai-dialog-head">
+    <div><h3 id="hf-consent-title">Autorisation caméra</h3></div>
+  </div>
+  <div class="ai-dialog-body">
+    <p>La caméra sert au suivi du visage et des mains. Le traitement se fait dans ce navigateur. Aucune image n'est enregistrée ni envoyée au serveur. Vous pouvez arrêter à tout moment.</p>
+    <label class="hf-consent-label"><input type="checkbox" data-hf-consent-check> J'ai compris et j'accepte d'activer la caméra pour la navigation mains libres.</label>
+  </div>
+  <div class="ai-dialog-foot">
+    <button type="button" class="btn btn-light btn-sm" data-hf-consent-cancel>Annuler</button>
+    <button type="button" class="btn btn-primary btn-sm" data-hf-consent-accept disabled>Continuer</button>
+  </div>
+</dialog>
+<dialog class="ai-dialog hf-dialog hf-calibration" data-hf-calibration aria-labelledby="hf-calibration-title">
+  <div class="ai-dialog-head">
+    <div><h3 id="hf-calibration-title">Calibration du clignement</h3><span data-hf-calibration-status>Gardez les yeux ouverts pendant 3 secondes.</span></div>
+    <button type="button" class="btn btn-ghost btn-sm" data-hf-calibration-close aria-label="Fermer"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="ai-dialog-body">
+    <p data-hf-calibration-instructions>Clignez naturellement pendant la deuxième étape pour ajuster la détection à votre caméra.</p>
+    <div class="hf-calibration-stage" data-hf-calibration-stage></div>
+    <p class="form-help" data-hf-calibration-result aria-live="polite"></p>
+  </div>
+</dialog>
+{% endif %}

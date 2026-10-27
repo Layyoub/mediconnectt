@@ -1,0 +1,95 @@
+{% extends "core/auth/_layout.html" %}
+
+{% block title %}Inscription médecin{% endblock %}
+
+{% block aside %}
+<h2>Rejoignez un réseau de médecins de confiance.</h2>
+<p>Après vérification de vos justificatifs, recevez des demandes de téléconsultation déjà pré-triées par notre assistant.</p>
+<ul class="auth-points">
+  <li><i class="bi bi-1-circle"></i><div><strong>Vous soumettez votre dossier</strong><span>Informations professionnelles et justificatifs.</span></div></li>
+  <li><i class="bi bi-2-circle"></i><div><strong>Notre équipe le vérifie</strong><span>Diplôme, inscription à l'Ordre et identité, sous 48 h ouvrées.</span></div></li>
+  <li><i class="bi bi-3-circle"></i><div><strong>Votre compte est activé</strong><span>Vous pouvez recevoir vos premières demandes.</span></div></li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="auth-box auth-box-wide">
+  <div class="auth-head">
+    <span class="icon-badge icon-badge-solid"><i class="bi bi-person-badge"></i></span>
+    <h1>Inscription médecin</h1>
+    <p>Complétez votre dossier professionnel. Il sera examiné par l'équipe MediConnect.</p>
+  </div>
+
+  <nav class="stepper" aria-label="Sections du formulaire">
+    <a href="#identite"><b>1</b> Identité</a>
+    <a href="#professionnel"><b>2</b> Activité</a>
+    <a href="#justificatifs"><b>3</b> Justificatifs</a>
+    <a href="#securite"><b>4</b> Sécurité</a>
+  </nav>
+
+  {% include "core/partials/form_errors.html" %}
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <fieldset class="form-section" id="identite">
+      <div class="form-section-title">
+        <span class="icon-badge icon-badge-sm"><i class="bi bi-person-vcard"></i></span>
+        <div><h3>Informations personnelles</h3><p>Telles qu'elles figurent sur vos documents officiels.</p></div>
+      </div>
+      <div class="form-row">
+        {% include "core/partials/field.html" with field=form.first_name %}
+        {% include "core/partials/field.html" with field=form.last_name %}
+      </div>
+      <div class="form-row">
+        {% include "core/partials/field.html" with field=form.email icon="envelope" %}
+        {% include "core/partials/field.html" with field=form.phone icon="telephone" %}
+      </div>
+    </fieldset>
+
+    <fieldset class="form-section" id="professionnel">
+      <div class="form-section-title">
+        <span class="icon-badge icon-badge-sm"><i class="bi bi-hospital"></i></span>
+        <div><h3>Renseignements professionnels</h3><p>Ces informations apparaîtront sur votre profil.</p></div>
+      </div>
+      <div class="form-row">
+        {% include "core/partials/field.html" with field=form.specialty %}
+        {% include "core/partials/field.html" with field=form.license_number icon="upc" %}
+      </div>
+      <div class="form-row">
+        {% include "core/partials/field.html" with field=form.city icon="geo-alt" %}
+        {% include "core/partials/field.html" with field=form.years_experience %}
+      </div>
+      {% include "core/partials/field.html" with field=form.practice_address icon="building" %}
+      {% include "core/partials/field.html" with field=form.bio %}
+    </fieldset>
+
+    <fieldset class="form-section" id="justificatifs">
+      <div class="form-section-title">
+        <span class="icon-badge icon-badge-sm"><i class="bi bi-folder-check"></i></span>
+        <div><h3>Justificatifs</h3><p>Documents lisibles, PDF, JPG ou PNG, 5 Mo maximum chacun.</p></div>
+      </div>
+      {% include "core/partials/field.html" with field=form.diploma icon="mortarboard" %}
+      {% include "core/partials/field.html" with field=form.license_document icon="award" %}
+      <div class="alert alert-info" style="margin:0"><i class="bi bi-lock"></i><p>Vos justificatifs sont stockés de façon sécurisée et consultés uniquement par l'équipe de vérification.</p></div>
+    </fieldset>
+
+    <fieldset class="form-section" id="securite">
+      <div class="form-section-title">
+        <span class="icon-badge icon-badge-sm"><i class="bi bi-shield-lock"></i></span>
+        <div><h3>Sécurité du compte</h3><p>Choisissez un mot de passe robuste.</p></div>
+      </div>
+      <div class="form-row">
+        {% include "core/partials/field.html" with field=form.password1 %}
+        {% include "core/partials/field.html" with field=form.password2 %}
+      </div>
+      <div class="alert alert-info" style="margin-bottom:1rem"><i class="bi bi-robot"></i><p>Pour accélérer la vérification, votre diplôme, votre attestation d'inscription, votre nom, votre spécialité et votre numéro d'inscription sont analysés automatiquement par un service d'intelligence artificielle (OpenAI). La décision finale est toujours prise par notre équipe.</p></div>
+      {% include "core/partials/field.html" with field=form.certify %}
+      {% include "core/partials/field.html" with field=form.accept_terms %}
+    </fieldset>
+
+    <button type="submit" class="btn btn-primary btn-block btn-lg"><i class="bi bi-send"></i> Soumettre mon dossier</button>
+  </form>
+  <p class="auth-foot">Déjà inscrit ? <a href="{% url 'login' %}">Se connecter</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "core/patient/_layout.html" %}
+
+{% block title %}Nouvelle évaluation · Symptômes{% endblock %}
+
+{% block content %}
+<div class="wizard-wrap wizard-wide">
+  <a href="{% url 'triage:context' session.pk %}" class="back-link"><i class="bi bi-arrow-left"></i> Modifier le contexte</a>
+  {% include "triage/_stepper.html" %}
+
+  <section class="card">
+    <div class="card-body wizard-body">
+      <h1 class="wizard-title">Quels symptômes ressentez-vous ?</h1>
+      <p class="text-muted">Cochez tout ce qui s'applique, puis précisez l'intensité et depuis quand.</p>
+
+      {% include "core/partials/form_errors.html" %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% for group in form.grouped %}
+        <fieldset class="symptom-group">
+          <legend><i class="bi bi-{{ group.icon }}"></i> {{ group.label }}</legend>
+          <div class="symptom-grid">
+            {% for item in group.items %}
+            <div class="symptom-card{% if item.check.value %} is-checked{% endif %}{% if item.severity.errors or item.duration.errors %} has-error{% endif %}" data-symptom>
+              <label class="symptom-head" for="{{ item.check.id_for_label }}">
+                <input type="checkbox" name="{{ item.check.html_name }}" id="{{ item.check.id_for_label }}" class="form-check-input"{% if item.check.value %} checked{% endif %} data-symptom-check>
+                <i class="bi bi-{{ item.symptom.icon }}"></i>
+                <span>{{ item.symptom.label }}</span>
+              </label>
+              <div class="symptom-details" data-symptom-details>
+                <div class="segmented" role="radiogroup" aria-label="Intensité">
+                  {% for radio in item.severity %}
+                  <label>{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>
+                  {% endfor %}
+                </div>
+                <select name="{{ item.duration.html_name }}" class="form-control form-select" aria-label="Depuis quand">
+                  {% for value, label in item.duration.field.choices %}
+                  <option value="{{ value }}"{% if item.duration.value|stringformat:"s" == value %} selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                {% for error in item.severity.errors %}<div class="form-error"><i class="bi bi-exclamation-circle"></i><span>{{ error }}</span></div>{% endfor %}
+                {% for error in item.duration.errors %}<div class="form-error"><i class="bi bi-exclamation-circle"></i><span>{{ error }}</span></div>{% endfor %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </fieldset>
+        {% endfor %}
+
+        <div class="wizard-actions wizard-actions-sticky">
+          <span class="small text-muted" data-symptom-count></span>
+          <button type="submit" class="btn btn-primary btn-lg">Continuer <i class="bi bi-arrow-right"></i></button>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>
+{% endblock %}

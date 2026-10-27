@@ -1,0 +1,76 @@
+{% extends layout %}
+
+{% block title %}Compte rendu du {{ appointment.start|date:"j F Y" }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'teleconsult:list' %}" class="back-link no-print"><i class="bi bi-arrow-left"></i> Consultations</a>
+<div class="page-head no-print">
+  <div>
+    <h1>Compte rendu de téléconsultation</h1>
+    <p>{{ appointment.start|date:"l j F Y"|capfirst }} · {% if room.duration_minutes %}{{ room.duration_minutes }} min{% endif %}</p>
+  </div>
+  <div class="room-head-actions">
+    {% if role == "doctor" %}
+    <a href="{% url 'teleconsult:finish' room.code %}" class="btn btn-light"><i class="bi bi-pencil"></i> Modifier</a>
+    <a href="{% url 'records:new_prescription' appointment.patient_id %}?rdv={{ appointment.pk }}" class="btn btn-light"><i class="bi bi-prescription2"></i> Rédiger une ordonnance</a>
+    {% endif %}
+    <button type="button" class="btn btn-primary" data-print><i class="bi bi-printer"></i> Imprimer</button>
+  </div>
+</div>
+
+<article class="card report">
+  <header class="report-head">
+    <div>
+      {% include "core/partials/logo.html" %}
+      <p class="small text-muted" style="margin:.5rem 0 0">Compte rendu de téléconsultation</p>
+    </div>
+    <div class="report-meta">
+      <strong>Dr {{ appointment.doctor.get_full_name }}</strong>
+      <span>{{ appointment.doctor.doctor_profile.get_specialty_display }}</span>
+      <span>N° Ordre : {{ appointment.doctor.doctor_profile.license_number }}</span>
+    </div>
+  </header>
+
+  <dl class="report-patient">
+    <div><dt>Patient</dt><dd>{{ appointment.patient.get_full_name }}</dd></div>
+    <div><dt>Âge</dt><dd>{% if patient_age is not None %}{{ patient_age }} ans{% else %}—{% endif %}</dd></div>
+    <div><dt>Date</dt><dd>{{ appointment.start|date:"j F Y" }}, {{ appointment.start|time:"H:i" }}</dd></div>
+    <div><dt>Motif</dt><dd>{{ appointment.reason|truncatechars:80 }}</dd></div>
+  </dl>
+
+  <section class="report-section">
+    <h3>Diagnostic / hypothèse</h3>
+    <p>{{ summary.diagnosis|linebreaksbr }}</p>
+  </section>
+  {% if summary.observations %}
+  <section class="report-section">
+    <h3>Observations</h3>
+    <p>{{ summary.observations|linebreaksbr }}</p>
+  </section>
+  {% endif %}
+  <section class="report-section report-highlight">
+    <h3><i class="bi bi-clipboard2-check"></i> Conduite à tenir et conseils</h3>
+    <p>{{ summary.recommendations|linebreaksbr }}</p>
+  </section>
+  {% if summary.follow_up %}
+  <section class="report-section">
+    <h3>Suivi</h3>
+    <p>{{ summary.follow_up }}</p>
+  </section>
+  {% endif %}
+
+  <footer class="report-foot">
+    <span>Rédigé le {{ summary.created_at|date:"j F Y à H:i" }}{% if summary.updated_at|date:"YmdHi" != summary.created_at|date:"YmdHi" %} · modifié le {{ summary.updated_at|date:"j F Y à H:i" }}{% endif %}</span>
+    <span>En cas d'aggravation, consultez sans attendre ou appelez le 112.</span>
+  </footer>
+</article>
+
+{% if prescriptions %}
+<section class="card no-print" style="margin-top:1.25rem;max-width:860px">
+  <div class="card-header"><h3><i class="bi bi-capsule"></i> Ordonnance{{ prescriptions|length|pluralize }} de cette consultation</h3></div>
+  <div class="card-body-flush">
+    {% for p in prescriptions %}{% include "records/_prescription_row.html" %}{% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

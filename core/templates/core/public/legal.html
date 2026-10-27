@@ -1,0 +1,29 @@
+{% extends "core/public/_layout.html" %}
+
+{% block title %}Mentions légales{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container page-narrow prose">
+    <span class="eyebrow">Informations légales</span>
+    <h1>Mentions légales</h1>
+    <div class="alert alert-info"><i class="bi bi-info-circle"></i><p>MediConnect est un projet de démonstration. Les informations ci-dessous sont fictives.</p></div>
+
+    <h2>Éditeur</h2>
+    <p>MediConnect — Projet académique de démonstration<br>10 avenue de la Santé, Ville Démo<br>contact@mediconnect.demo · +00 1 23 45 67 89</p>
+
+    <h2>Hébergement</h2>
+    <p>Hébergeur fictif, données de démonstration uniquement.</p>
+
+    <h2 id="confidentialite">Confidentialité des données</h2>
+    <p>Les données de santé sont des données sensibles. Dans une version de production, elles devraient être hébergées chez un hébergeur certifié pour les données de santé, chiffrées et accessibles uniquement aux professionnels autorisés.</p>
+    <ul>
+      <li>Les justificatifs des médecins ne sont jamais accessibles publiquement.</li>
+      <li>Vous pouvez demander l'accès, la rectification ou la suppression de vos données.</li>
+    </ul>
+
+    <h2 id="cgu">Conditions d'utilisation</h2>
+    <p>Le triage assisté par IA est un outil d'orientation et ne remplace pas un avis médical. En cas d'urgence vitale, appelez immédiatement les services d'urgence.</p>
+  </div>
+</section>
+{% endblock %}

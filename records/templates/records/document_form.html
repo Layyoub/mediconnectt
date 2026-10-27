@@ -1,0 +1,36 @@
+{% extends layout %}
+
+{% block title %}Ajouter un document{% endblock %}
+
+{% block content %}
+<a href="{{ back }}" class="back-link"><i class="bi bi-arrow-left"></i> {% if role == "patient" %}Mon dossier{% else %}Dossier de {{ record.patient.get_full_name }}{% endif %}</a>
+<div class="page-head">
+  <div>
+    <h1>Ajouter un document</h1>
+    <p>Analyses, radios, courriers, carnet de vaccination… Le fichier reste privé : {% if role == "patient" %}seuls vous et vos médecins{% else %}seuls le patient et ses médecins{% endif %} peuvent l'ouvrir.</p>
+  </div>
+</div>
+
+<div class="dash-grid">
+  <div class="col-8">
+    <section class="card">
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data" novalidate data-loading-form>
+          {% csrf_token %}
+          {% include "core/partials/form_errors.html" %}
+          {% include "core/partials/field.html" with field=form.file icon="file-earmark-medical" %}
+          {% include "core/partials/field.html" with field=form.title %}
+          <div class="form-row">
+            {% include "core/partials/field.html" with field=form.kind %}
+            {% include "core/partials/field.html" with field=form.document_date %}
+          </div>
+          <div class="wizard-actions">
+            <a href="{{ back }}" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary btn-lg" data-loading-text="Envoi…"><i class="bi bi-upload"></i> Ajouter au dossier</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

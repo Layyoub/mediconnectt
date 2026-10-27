@@ -1,0 +1,34 @@
+{% extends "core/app/_layout.html" %}
+
+{% block body_class %}bo{% endblock %}
+{% block user_role_label %}Administrateur{% endblock %}
+
+{% block sidebar_logo %}
+<a href="{% url 'backoffice:overview' %}" class="logo" aria-label="Back-office MediConnect">
+  <span class="logo-mark"><i class="bi bi-heart-pulse-fill"></i></span>
+  <span>Medi<b>Connect</b></span>
+  <span class="bo-tag">Admin</span>
+</a>
+{% endblock %}
+
+{% block sidebar_nav %}
+<div class="sidebar-section">Pilotage</div>
+<a href="{% url 'backoffice:overview' %}" class="sidebar-link{% if section == 'overview' %} active{% endif %}"><i class="bi bi-speedometer2"></i> Vue d'ensemble</a>
+<div class="sidebar-section">Utilisateurs</div>
+<a href="{% url 'backoffice:doctor_list' %}" class="sidebar-link{% if section == 'doctors' %} active{% endif %}"><i class="bi bi-person-badge"></i> Médecins{% if pending_count %} <span class="count" title="Dossiers en attente">{{ pending_count }}</span>{% endif %}</a>
+<a href="{% url 'backoffice:patient_list' %}" class="sidebar-link{% if section == 'patients' %} active{% endif %}"><i class="bi bi-people"></i> Patients</a>
+<div class="sidebar-section">Modules</div>
+<a href="{% url 'backoffice:triage' %}" class="sidebar-link{% if section == 'triage' %} active{% endif %}"><i class="bi bi-clipboard2-pulse"></i> Triage</a>
+<a href="{% url 'backoffice:appointments' %}" class="sidebar-link{% if section == 'appointments' %} active{% endif %}"><i class="bi bi-calendar2-week"></i> Rendez-vous</a>
+<div class="sidebar-section">Outils</div>
+<a href="{% url 'admin:index' %}" class="sidebar-link"><i class="bi bi-database-gear"></i> Admin technique</a>
+<a href="{% url 'home' %}" class="sidebar-link" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Voir le site public</a>
+<div class="sidebar-section">Compte</div>
+<a href="{% url 'account_settings' %}" class="sidebar-link{% if active_nav == 'settings' %} active{% endif %}"><i class="bi bi-gear"></i> Paramètres</a>
+{% endblock %}
+
+{% block sidebar_help %}{% endblock %}
+
+{% block topbar_left %}
+<div class="breadcrumb">{% block breadcrumb %}<strong>Back-office</strong>{% endblock %}</div>
+{% endblock %}

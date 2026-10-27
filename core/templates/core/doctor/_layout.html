@@ -1,0 +1,22 @@
+{% extends "core/app/_layout.html" %}
+{% comment %}Shared layout for every doctor page. Views pass `profile` and `active_nav`.{% endcomment %}
+
+{% block user_name %}Dr {{ user.get_full_name|default:user.email }}{% endblock %}
+{% block user_role_label %}{{ user.doctor_profile.get_specialty_display }}{% endblock %}
+
+{% block sidebar_nav %}
+<div class="sidebar-section">Activité</div>
+<a href="{% url 'doctor_dashboard' %}" class="sidebar-link{% if active_nav == 'dashboard' %} active{% endif %}"><i class="bi bi-grid-1x2"></i> Tableau de bord</a>
+<a href="{% url 'appointments:requests' %}" class="sidebar-link{% if active_nav == 'requests' %} active{% endif %}"><i class="bi bi-inbox"></i> Demandes{% if doctor_pending_count %} <span class="count">{{ doctor_pending_count }}</span>{% endif %}</a>
+<a href="{% url 'appointments:agenda' %}" class="sidebar-link{% if active_nav == 'agenda' %} active{% endif %}"><i class="bi bi-calendar2-week"></i> Agenda</a>
+<a href="{% url 'teleconsult:list' %}" class="sidebar-link{% if active_nav == 'consultations' %} active{% endif %}"><i class="bi bi-camera-video"></i> Consultations</a>
+<a href="{% url 'appointments:availability' %}" class="sidebar-link{% if active_nav == 'availability' %} active{% endif %}"><i class="bi bi-clock"></i> Disponibilités</a>
+<div class="sidebar-section">Dossiers</div>
+<a href="{% url 'records:patients' %}" class="sidebar-link{% if active_nav == 'patients' %} active{% endif %}"><i class="bi bi-people"></i> Mes patients</a>
+<a href="{% url 'records:prescriptions' %}" class="sidebar-link{% if active_nav == 'prescriptions' %} active{% endif %}"><i class="bi bi-prescription2"></i> Ordonnances</a>
+<a href="{% url 'followups:doctor_plans' %}" class="sidebar-link{% if active_nav == 'followups' %} active{% endif %}"><i class="bi bi-list-check"></i> Plans de suivi</a>
+<div class="sidebar-section">Compte</div>
+<a href="{% url 'teleconsult:notifications' %}" class="sidebar-link{% if active_nav == 'notifications' %} active{% endif %}"><i class="bi bi-bell"></i> Notifications{% if unread_notifications %} <span class="count">{{ unread_notifications }}</span>{% endif %}</a>
+<a href="{% url 'account_profile' %}" class="sidebar-link{% if active_nav == 'profile' %} active{% endif %}"><i class="bi bi-person-badge"></i> Profil professionnel</a>
+<a href="{% url 'account_settings' %}" class="sidebar-link{% if active_nav == 'settings' %} active{% endif %}"><i class="bi bi-gear"></i> Paramètres</a>
+{% endblock %}

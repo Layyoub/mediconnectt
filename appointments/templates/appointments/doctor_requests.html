@@ -1,0 +1,71 @@
+{% extends "core/doctor/_layout.html" %}
+
+{% block title %}Demandes de consultation{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Demandes de consultation</h1>
+    <p>Validez ou refusez les demandes de vos patients. Les plus urgentes selon l'évaluation apparaissent avec leur niveau.</p>
+  </div>
+  <a href="{% url 'appointments:availability' %}" class="btn btn-light"><i class="bi bi-clock"></i> Mes disponibilités</a>
+</div>
+
+<section class="card">
+  <div class="toolbar">
+    <nav class="tabs" aria-label="Filtrer les demandes">
+      <a href="?tab=pending" class="{% if tab == 'pending' %}active{% endif %}">À traiter ({{ pending|length }})</a>
+      <a href="?tab=decided" class="{% if tab == 'decided' %}active{% endif %}">Traitées récemment</a>
+    </nav>
+  </div>
+
+  {% if tab == "pending" %}
+    {% for a in pending %}
+    <article class="request-card">
+      <div class="request-top">
+        <div class="date-tile"><span>{{ a.start|date:"M" }}</span><strong>{{ a.start|date:"j" }}</strong></div>
+        <div class="list-main">
+          <strong>{{ a.patient.get_full_name }}</strong>
+          <span>{{ a.start|date:"l j F"|capfirst }} à {{ a.start|time:"H:i" }} · demandé {{ a.created_at|timesince }} plus tôt</span>
+        </div>
+        {% if a.triage_session %}<span class="badge triage-{{ a.triage_session.result.level }}">{{ a.triage_session.result.get_level_display }}</span>{% endif %}
+        <a href="{% url 'appointments:detail' a.pk %}" class="btn btn-ghost btn-sm">Dossier <i class="bi bi-chevron-right"></i></a>
+      </div>
+      <p class="request-reason"><strong>Motif :</strong> {{ a.reason|truncatechars:180 }}</p>
+      {% if a.triage_session %}
+      <div class="request-triage"><i class="bi bi-clipboard2-pulse"></i><span>{{ a.triage_session.result.recommendation|truncatechars:160 }}</span></div>
+      {% endif %}
+      {% url 'appointments:requests' as here %}
+      {% include "appointments/_decision.html" with next=here %}
+    </article>
+    {% empty %}
+    <div class="empty-state">
+      <span class="icon-badge icon-badge-neutral"><i class="bi bi-inbox"></i></span>
+      <strong>Aucune demande en attente</strong>
+      <p>Les nouvelles demandes de vos patients apparaîtront ici. Vérifiez que vos disponibilités sont à jour.</p>
+      <a href="{% url 'appointments:availability' %}" class="btn btn-light">Gérer mes disponibilités</a>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="card-body-flush">
+      {% for a in decided %}
+      <div class="list-item">
+        <div class="date-tile"><span>{{ a.start|date:"M" }}</span><strong>{{ a.start|date:"j" }}</strong></div>
+        <div class="list-main">
+          <strong>{{ a.patient.get_full_name }}</strong>
+          <span>{{ a.start|date:"l j F" }} à {{ a.start|time:"H:i" }} · traité le {{ a.decided_at|date:"j M, H:i" }}</span>
+        </div>
+        {% include "appointments/_status.html" %}
+        <a href="{% url 'appointments:detail' a.pk %}" class="btn btn-ghost btn-sm" aria-label="Voir"><i class="bi bi-chevron-right"></i></a>
+      </div>
+      {% empty %}
+      <div class="empty-state">
+        <span class="icon-badge icon-badge-neutral"><i class="bi bi-check2-all"></i></span>
+        <strong>Aucune demande traitée</strong>
+        <p>Les demandes que vous acceptez ou refusez apparaîtront ici.</p>
+      </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

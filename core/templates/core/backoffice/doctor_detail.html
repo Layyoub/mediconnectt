@@ -1,0 +1,93 @@
+{% extends "core/backoffice/_layout.html" %}
+
+{% block title %}{{ doctor }} · Back-office{% endblock %}
+{% block breadcrumb %}<a href="{% url 'backoffice:overview' %}">Back-office</a><i class="bi bi-chevron-right small"></i><a href="{% url 'backoffice:doctor_list' %}">Médecins</a><i class="bi bi-chevron-right small"></i><strong>{{ doctor }}</strong>{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div style="display:flex;gap:1rem;align-items:center">
+    <span class="avatar" style="width:56px;height:56px;font-size:1.1rem">{{ doctor.user.first_name|slice:":1"|upper }}{{ doctor.user.last_name|slice:":1"|upper }}</span>
+    <div>
+      <h1 style="margin-bottom:.3rem">{{ doctor }}</h1>
+      <p style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">{{ doctor.get_specialty_display }} · {{ doctor.city }} {% include "core/backoffice/_status_badge.html" with status=doctor.status %}</p>
+    </div>
+  </div>
+  <a href="{% url 'backoffice:doctor_list' %}" class="btn btn-light"><i class="bi bi-arrow-left"></i> Retour à la liste</a>
+</div>
+
+<div class="dash-grid">
+  <div class="col-8">
+    {% include "verification/_panel.html" %}
+    <section class="card" style="margin-bottom:1.25rem">
+      <div class="card-header"><h3><i class="bi bi-person-vcard"></i> Informations</h3></div>
+      <div class="card-body">
+        <dl class="dl">
+          <dt>Nom complet</dt><dd>{{ doctor.user.get_full_name }}</dd>
+          <dt>Adresse e-mail</dt><dd><a href="mailto:{{ doctor.user.email }}">{{ doctor.user.email }}</a></dd>
+          <dt>Téléphone</dt><dd>{{ doctor.phone }}</dd>
+          <dt>Spécialité</dt><dd>{{ doctor.get_specialty_display }}</dd>
+          <dt>N° d'inscription à l'Ordre</dt><dd><code>{{ doctor.license_number }}</code></dd>
+          <dt>Expérience</dt><dd>{{ doctor.years_experience }} an{{ doctor.years_experience|pluralize }}</dd>
+          <dt>Ville d'exercice</dt><dd>{{ doctor.city }}</dd>
+          <dt>Adresse du cabinet</dt><dd>{{ doctor.practice_address|default:"—" }}</dd>
+          <dt>Présentation</dt><dd>{{ doctor.bio|default:"—"|linebreaksbr }}</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-folder-check"></i> Justificatifs</h3></div>
+      <div class="card-body">
+        {% for kind, label, file in documents %}
+        <div class="doc-item">
+          <span class="icon-badge icon-badge-sm"><i class="bi bi-file-earmark-{% if file.name|lower|slice:'-4:' == '.pdf' %}pdf{% else %}image{% endif %}"></i></span>
+          <div><strong>{{ label }}</strong><span>{{ file.name }}</span></div>
+          <a href="{% url 'backoffice:doctor_document' doctor.pk kind %}" target="_blank" rel="noopener" class="btn btn-light btn-sm"><i class="bi bi-eye"></i> Ouvrir</a>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <div class="col-4">
+    <section class="card" style="margin-bottom:1.25rem">
+      <div class="card-header"><h3><i class="bi bi-clipboard-check"></i> Décision</h3></div>
+      <div class="card-body">
+        {% if doctor.status != "pending" %}
+        <div class="alert alert-info"><i class="bi bi-info-circle"></i><p>Ce dossier a déjà été traité. Vous pouvez modifier la décision si nécessaire.</p></div>
+        {% endif %}
+        <form method="post" action="{% url 'backoffice:doctor_decision' doctor.pk %}" novalidate>
+          {% csrf_token %}
+          <div class="form-group">
+            <div class="form-check" style="padding:.75rem;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:.5rem">
+              <input class="form-check-input" type="radio" name="decision" value="approve" id="decision-approve" {% if form.decision.value == "approve" or not form.decision.value %}checked{% endif %}>
+              <label for="decision-approve" style="color:var(--text)"><strong>Approuver</strong><br><span class="small text-muted">Les justificatifs sont valides.</span></label>
+            </div>
+            <div class="form-check" style="padding:.75rem;border:1px solid var(--border);border-radius:var(--radius-sm)">
+              <input class="form-check-input" type="radio" name="decision" value="reject" id="decision-reject" {% if form.decision.value == "reject" %}checked{% endif %}>
+              <label for="decision-reject" style="color:var(--text)"><strong>Refuser</strong><br><span class="small text-muted">Dossier incomplet ou non conforme.</span></label>
+            </div>
+          </div>
+          <div data-reason-block>
+            {% include "core/partials/field.html" with field=form.reason %}
+          </div>
+          <button type="submit" class="btn btn-primary btn-block"><i class="bi bi-check2-circle"></i> Enregistrer la décision</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-clock-history"></i> Historique</h3></div>
+      <div class="card-body-flush">
+        <div class="list-item"><i class="bi bi-send text-red"></i><div class="list-main"><strong>Dossier soumis</strong><span>{{ doctor.submitted_at|date:"j F Y à H:i" }}</span></div></div>
+        {% if doctor.reviewed_at %}
+        <div class="list-item"><i class="bi bi-clipboard-check text-red"></i><div class="list-main"><strong>{{ doctor.get_status_display }}</strong><span>{{ doctor.reviewed_at|date:"j F Y à H:i" }}</span></div></div>
+        {% endif %}
+        {% if doctor.rejection_reason %}
+        <div class="list-item"><i class="bi bi-chat-left-text text-red"></i><div class="list-main"><strong>Motif du refus</strong><span style="white-space:normal">{{ doctor.rejection_reason }}</span></div></div>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

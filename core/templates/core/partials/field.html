@@ -1,0 +1,39 @@
+{% comment %}
+Renders one form field with the design system.
+Usage: {% include "core/partials/field.html" with field=form.email icon="envelope" %}
+Optional: icon (Bootstrap Icons name), hint (text under a file upload).
+{% endcomment %}
+<div class="form-group{% if field.errors %} has-error{% endif %}">
+  {% if field.widget_type == "checkbox" %}
+    <div class="form-check">
+      {{ field }}
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    </div>
+  {% else %}
+    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="req" aria-hidden="true">*</span>{% endif %}</label>
+    {% if field.widget_type == "password" %}
+      <div class="password-field">
+        {{ field }}
+        <button type="button" class="password-toggle" data-password-toggle aria-label="Afficher le mot de passe"><i class="bi bi-eye"></i></button>
+      </div>
+    {% elif field.widget_type == "clearablefile" or field.widget_type == "file" %}
+      <label class="file-drop" for="{{ field.id_for_label }}">
+        <span class="icon-badge icon-badge-sm"><i class="bi bi-{{ icon|default:'file-earmark-arrow-up' }}"></i></span>
+        <span class="file-drop-text">
+          <strong>Choisir un fichier ou le glisser ici</strong>
+          <span class="file-name">{{ hint|default:"PDF, JPG ou PNG · 5 Mo maximum" }}</span>
+        </span>
+        <i class="bi bi-upload text-muted"></i>
+        {{ field }}
+      </label>
+    {% elif icon %}
+      <div class="input-icon"><i class="bi bi-{{ icon }}"></i>{{ field }}</div>
+    {% else %}
+      {{ field }}
+    {% endif %}
+    {% if field.help_text %}<div class="form-help">{{ field.help_text|safe }}</div>{% endif %}
+  {% endif %}
+  {% for error in field.errors %}
+    <div class="form-error"><i class="bi bi-exclamation-circle"></i><span>{{ error }}</span></div>
+  {% endfor %}
+</div>

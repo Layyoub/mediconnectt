@@ -1,0 +1,1 @@
+<span class="badge status-{{ a.status_key }}"><i class="bi bi-{% if a.status_key == 'pending' %}hourglass-split{% elif a.status_key == 'confirmed' %}check2-circle{% elif a.status_key == 'refused' %}x-circle{% elif a.status_key == 'completed' %}check2-all{% elif a.status_key == 'expired' %}clock-history{% else %}slash-circle{% endif %}"></i> {{ a.status_label }}</span>

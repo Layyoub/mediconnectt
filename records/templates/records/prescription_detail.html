@@ -1,0 +1,166 @@
+{% extends layout %}
+
+{% block title %}Ordonnance {{ prescription.code }}{% endblock %}
+
+{% block content %}
+<a href="{{ back }}" class="back-link no-print"><i class="bi bi-arrow-left"></i> {% if role == "patient" %}Mes ordonnances{% else %}Dossier de {{ patient.get_full_name }}{% endif %}</a>
+<div class="page-head no-print">
+  <div>
+    <h1>Ordonnance</h1>
+    <p>Rédigée le {{ prescription.created_at|date:"j F Y" }} · {% if prescription.is_valid %}valable jusqu'au {{ prescription.valid_until|date:"j F Y" }}{% else %}expirée depuis le {{ prescription.valid_until|date:"j F Y" }}{% endif %}</p>
+  </div>
+  <div class="room-head-actions">
+    {% if prescription.is_valid %}<span class="badge badge-soft">Valable</span>{% else %}<span class="badge badge-neutral">Expirée</span>{% endif %}
+    {% if pharmacheck_check %}<span class="badge pc-detail-badge">Pharma-Check · {{ pharmacheck_check.get_max_severity_display }}</span>{% endif %}
+    <button type="button" class="btn btn-primary" data-print><i class="bi bi-printer"></i> Imprimer / PDF</button>
+  </div>
+</div>
+
+{% if pharmacheck_check %}
+<section class="card pc-detail no-print" aria-label="Résultats de Pharma-Check réservés au médecin">
+  <div class="card-header"><h3>Pharma-Check — aide à la décision</h3></div>
+  <div class="card-body">
+    {% for finding in pharmacheck_check.findings %}
+    <article class="pc-finding pc-finding--{% if finding.severity == 'major' or finding.severity == 'contraindicated' %}danger{% elif finding.severity == 'moderate' %}moderate{% else %}info{% endif %}">
+      <strong>{{ finding.severity_label }} · {{ finding.kind }}</strong>
+      <p>{{ finding.message }}</p>
+    </article>
+    {% empty %}
+    <p>Aucune alerte des règles configurées n'a été relevée. Cela ne garantit pas l'absence de risque.</p>
+    {% endfor %}
+    {% if pharmacheck_check.override_reason %}<p><strong>Motif de dérogation :</strong> {{ pharmacheck_check.override_reason }}</p>{% endif %}
+    {% if pharmacheck_check.ai_status == "done" %}
+    <p><strong>Pharmacien IA · niveau final : {{ pharmacheck_check.ai_opinion.final_level }}</strong></p>
+    <p>{{ pharmacheck_check.ai_opinion.pharmacist_comment }}</p>
+    {% for finding in pharmacheck_check.ai_opinion.extra_findings %}
+    <article class="pc-finding pc-finding--{% if finding.severity == 'major' or finding.severity == 'contraindicated' %}danger{% elif finding.severity == 'moderate' %}moderate{% else %}info{% endif %}">
+      <span class="pc-ai-badge">{% if finding.kind == "interaction" %}IA, non confirmé par les règles{% else %}IA{% endif %}</span>
+      <strong>{{ finding.title }} · {{ finding.severity }}</strong>
+      <p>{{ finding.detail }}</p>
+      <p class="pc-reliance">D'après : {{ finding.based_on|join:", " }}</p>
+    </article>
+    {% endfor %}
+    {% for alternative in pharmacheck_check.ai_opinion.alternatives %}
+    <article class="pc-ai-suggestion">
+      <span class="pc-ai-badge">IA</span>
+      <strong>À discuter pour : {{ alternative.instead_of }}</strong>
+      <p>{{ alternative.suggestion }} — {{ alternative.why }}</p>
+      <p class="pc-reliance">D'après : {{ alternative.based_on|join:", " }}</p>
+    </article>
+    {% endfor %}
+    {% endif %}
+    <p class="small text-muted">Aide à la décision uniquement ; la décision appartient au médecin.</p>
+  </div>
+</section>
+{% endif %}
+
+{% if role == "doctor" and patient_instructions %}
+<section class="card pc-instructions no-print" aria-labelledby="patient-instructions-title">
+  <div class="card-header">
+    <h3 id="patient-instructions-title"><i class="bi bi-translate"></i> Consignes patient</h3>
+    <span class="badge badge-neutral">{{ patient_instructions.get_generation_status_display }}</span>
+  </div>
+  <div class="card-body">
+    {% if patient_instructions.generation_status == "running" %}
+    <p><span class="pc-spinner" aria-hidden="true"></span> Génération du brouillon en cours…</p>
+    {% elif patient_instructions.generation_status == "error" %}
+    <p class="pc-ai-error">Consignes IA indisponibles. L'ordonnance enregistrée reste accessible ; aucune consigne n'est publiée.</p>
+    {% else %}
+    <p class="small text-muted">Vérifiez et modifiez le brouillon. Le patient ne le verra qu'après votre approbation.</p>
+    <form method="post" action="{% url 'records:patient_instructions' prescription.code %}">
+      {% csrf_token %}
+      <label for="instructions-fr">Français</label>
+      <textarea class="form-control" id="instructions-fr" name="text_fr" rows="5" lang="fr">{{ patient_instructions.text_fr }}</textarea>
+      <label for="instructions-ar">العربية</label>
+      <textarea class="form-control" id="instructions-ar" name="text_ar" rows="5" lang="ar" dir="rtl">{{ patient_instructions.text_ar }}</textarea>
+      <div class="wizard-actions">
+        <button class="btn btn-light" type="submit" name="instruction_action" value="save">Modifier / enregistrer</button>
+        <button class="btn btn-primary" type="submit" name="instruction_action" value="approve">Approuver et publier au patient</button>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+{% if role == "patient" and patient_instructions and patient_instructions.status == "approved" %}
+<section class="card pc-instructions" aria-labelledby="patient-instructions-title">
+  <div class="card-header"><h3 id="patient-instructions-title"><i class="bi bi-translate"></i> Consignes pour vous</h3></div>
+  <div class="card-body">
+    <div class="pc-instructions-switch" role="group" aria-label="Langue des consignes">
+      <button class="btn btn-light" type="button" data-instruction-language="fr" aria-pressed="true">Français</button>
+      <button class="btn btn-light" type="button" data-instruction-language="ar" aria-pressed="false">العربية</button>
+    </div>
+    <div class="pc-instruction-text" data-instruction-text="fr" lang="fr">{{ patient_instructions.text_fr|linebreaksbr }}</div>
+    <div class="pc-instruction-text" data-instruction-text="ar" lang="ar" dir="rtl" hidden>{{ patient_instructions.text_ar|linebreaksbr }}</div>
+    <p class="small text-muted" style="margin-top:.75rem">Rédigé avec l'aide d'une IA et validé par votre médecin.</p>
+  </div>
+</section>
+{% endif %}
+
+<article class="card report prescription">
+  <header class="report-head">
+    <div>
+      {% include "core/partials/logo.html" %}
+      <p class="small text-muted" style="margin:.5rem 0 0">Ordonnance · téléconsultation</p>
+    </div>
+    <div class="report-meta">
+      {% with d=prescription.doctor %}
+      <strong>Dr {{ d.get_full_name|default:"—" }}</strong>
+      {% if d.doctor_profile %}
+      <span>{{ d.doctor_profile.get_specialty_display }}</span>
+      <span>N° Ordre : {{ d.doctor_profile.license_number }}</span>
+      <span>{{ d.doctor_profile.city }}</span>
+      {% endif %}
+      {% endwith %}
+    </div>
+  </header>
+
+  <dl class="report-patient">
+    <div><dt>Patient</dt><dd>{{ patient.get_full_name }}</dd></div>
+    <div><dt>Âge</dt><dd>{% if patient_age is not None %}{{ patient_age }} ans{% else %}—{% endif %}</dd></div>
+    <div><dt>Date</dt><dd>{{ prescription.created_at|date:"j F Y" }}</dd></div>
+    <div><dt>Référence</dt><dd>{{ prescription.code }}</dd></div>
+  </dl>
+
+  <ol class="rx-list">
+    {% for item in items %}
+    <li>
+      <strong>{{ item.drug_name }}</strong>
+      <p>{{ item.dosage }}, {{ item.frequency }}, pendant {{ item.duration }}.{% if item.instructions %} {{ item.instructions }}.{% endif %}</p>
+    </li>
+    {% endfor %}
+  </ol>
+
+  {% if prescription.notes %}
+  <section class="report-section report-highlight">
+    <h3><i class="bi bi-clipboard2-check"></i> Recommandations</h3>
+    <p>{{ prescription.notes|linebreaksbr }}</p>
+  </section>
+  {% endif %}
+
+  <div class="rx-signature">
+    <span>Signé électroniquement par</span>
+    <strong>Dr {{ prescription.doctor.get_full_name|default:"—" }}</strong>
+    <span>le {{ prescription.created_at|date:"j F Y à H:i" }}</span>
+  </div>
+
+  <footer class="report-foot">
+    <span>Valable jusqu'au {{ prescription.valid_until|date:"j F Y" }} · Réf. {{ prescription.code }}</span>
+    <span>Respectez les doses prescrites. En cas d'effet indésirable, contactez votre médecin.</span>
+  </footer>
+</article>
+{% if role == "patient" and patient_instructions and patient_instructions.status == "approved" %}
+<script>
+(() => {
+  const buttons = document.querySelectorAll("[data-instruction-language]");
+  const panels = document.querySelectorAll("[data-instruction-text]");
+  buttons.forEach(button => button.addEventListener("click", () => {
+    const language = button.dataset.instructionLanguage;
+    buttons.forEach(item => item.setAttribute("aria-pressed", String(item === button)));
+    panels.forEach(panel => { panel.hidden = panel.dataset.instructionText !== language; });
+  }));
+})();
+</script>
+{% endif %}
+{% endblock %}

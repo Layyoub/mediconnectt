@@ -1,0 +1,40 @@
+{% extends "core/auth/_layout.html" %}
+
+{% block title %}Inscription patient{% endblock %}
+
+{% block content %}
+<div class="auth-box auth-box-wide">
+  <div class="auth-card">
+    <div class="auth-head">
+      <span class="icon-badge"><i class="bi bi-person-heart"></i></span>
+      <h1>Créer mon compte patient</h1>
+      <p>Gratuit, en moins de 2 minutes.</p>
+    </div>
+
+    {% include "core/partials/form_errors.html" %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="form-row">
+        {% include "core/partials/field.html" with field=form.first_name %}
+        {% include "core/partials/field.html" with field=form.last_name %}
+      </div>
+      <div class="form-row">
+        {% include "core/partials/field.html" with field=form.email icon="envelope" %}
+        {% include "core/partials/field.html" with field=form.phone icon="telephone" %}
+      </div>
+      <div class="form-row">
+        {% include "core/partials/field.html" with field=form.date_of_birth %}
+        {% include "core/partials/field.html" with field=form.gender %}
+      </div>
+      <div class="form-row">
+        {% include "core/partials/field.html" with field=form.password1 %}
+        {% include "core/partials/field.html" with field=form.password2 %}
+      </div>
+      {% include "core/partials/field.html" with field=form.accept_terms %}
+      <button type="submit" class="btn btn-primary btn-block btn-lg">Créer mon compte</button>
+    </form>
+    <p class="auth-foot">Déjà inscrit ? <a href="{% url 'login' %}">Se connecter</a> · Vous êtes médecin ? <a href="{% url 'signup_doctor' %}">Inscription médecin</a></p>
+  </div>
+</div>
+{% endblock %}

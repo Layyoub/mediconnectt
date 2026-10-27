@@ -1,0 +1,20 @@
+{% extends "core/app/_layout.html" %}
+{% comment %}Shared layout for every patient page. Views pass `active_nav` to highlight the menu.{% endcomment %}
+
+{% block user_role_label %}Patient{% endblock %}
+
+{% block sidebar_nav %}
+<div class="sidebar-section">Mon espace</div>
+<a href="{% url 'patient_dashboard' %}" class="sidebar-link{% if active_nav == 'dashboard' %} active{% endif %}"><i class="bi bi-grid-1x2"></i> Tableau de bord</a>
+<a href="{% url 'triage:home' %}" class="sidebar-link{% if active_nav == 'triage' %} active{% endif %}"><i class="bi bi-clipboard2-pulse"></i> Évaluation</a>
+<a href="{% url 'appointments:list' %}" class="sidebar-link{% if active_nav == 'appointments' %} active{% endif %}"><i class="bi bi-calendar2-week"></i> Rendez-vous</a>
+<a href="{% url 'teleconsult:list' %}" class="sidebar-link{% if active_nav == 'consultations' %} active{% endif %}"><i class="bi bi-camera-video"></i> Consultations</a>
+<div class="sidebar-section">Ma santé</div>
+<a href="{% url 'records:my_record' %}" class="sidebar-link{% if active_nav == 'records' %} active{% endif %}"><i class="bi bi-folder2-open"></i> Dossier médical</a>
+<a href="{% url 'records:prescriptions' %}" class="sidebar-link{% if active_nav == 'prescriptions' %} active{% endif %}"><i class="bi bi-capsule"></i> Ordonnances</a>
+<a href="{% url 'followups:patient_plans' %}" class="sidebar-link{% if active_nav == 'followups' %} active{% endif %}"><i class="bi bi-list-check"></i> Plans de suivi</a>
+<div class="sidebar-section">Compte</div>
+<a href="{% url 'teleconsult:notifications' %}" class="sidebar-link{% if active_nav == 'notifications' %} active{% endif %}"><i class="bi bi-bell"></i> Notifications{% if unread_notifications %} <span class="count">{{ unread_notifications }}</span>{% endif %}</a>
+<a href="{% url 'account_profile' %}" class="sidebar-link{% if active_nav == 'profile' %} active{% endif %}"><i class="bi bi-person"></i> Mon profil</a>
+<a href="{% url 'account_settings' %}" class="sidebar-link{% if active_nav == 'settings' %} active{% endif %}"><i class="bi bi-gear"></i> Paramètres</a>
+{% endblock %}

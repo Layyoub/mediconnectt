@@ -1,0 +1,7 @@
+{% extends layout %}
+{% block title %}{% if plan %}Modifier{% else %}Nouveau{% endif %} plan de suivi{% endblock %}
+{% block content %}
+<a href="{{ back }}" class="back-link"><i class="bi bi-arrow-left"></i> Retour</a>
+<div class="page-head"><div><h1>{% if plan %}Modifier le plan{% else %}Nouveau plan de suivi{% endif %}</h1><p>Pour {{ appointment.patient.get_full_name }} · consultation du {{ appointment.start|date:"j F Y" }}</p></div></div>
+<div class="dash-grid"><div class="col-8"><section class="card"><div class="card-body"><form method="post" novalidate>{% csrf_token %}{% include "core/partials/form_errors.html" %}{% include "core/partials/field.html" with field=form.title %}{% include "core/partials/field.html" with field=form.instructions %}<div class="wizard-actions"><a href="{{ back }}" class="btn btn-ghost">Annuler</a><button class="btn btn-primary btn-lg" type="submit"><i class="bi bi-check2"></i> Enregistrer et ajouter des tâches</button></div></form></div></section></div></div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends layout %}
+
+{% block title %}Mes patients{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Mes patients</h1>
+    <p>Les patients dont vous avez accepté au moins un rendez-vous. Chaque ouverture de dossier est enregistrée et visible par le patient.</p>
+  </div>
+</div>
+
+<section class="card">
+  <div class="toolbar">
+    <span class="small text-muted">{{ patients|length }} patient{{ patients|length|pluralize }}</span>
+    <form method="get" role="search">
+      <div class="input-icon" style="flex:1"><i class="bi bi-search"></i><input type="search" name="q" value="{{ query }}" class="form-control" placeholder="Nom du patient…" aria-label="Rechercher un patient"></div>
+      <button class="btn btn-light btn-sm" type="submit">Rechercher</button>
+    </form>
+  </div>
+  {% if patients %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Patient</th><th>Âge</th><th>Allergies</th><th>Dernier rendez-vous</th><th></th></tr></thead>
+      <tbody>
+        {% for p in patients %}
+        <tr>
+          <td>
+            <div class="person">
+              <span class="avatar">{{ p.first_name|slice:":1"|upper }}{{ p.last_name|slice:":1"|upper }}</span>
+              <div><strong>{{ p.get_full_name }}</strong><span>{{ p.visits }} rendez-vous</span></div>
+            </div>
+          </td>
+          <td class="nowrap">{% if p.age is not None %}{{ p.age }} ans{% else %}—{% endif %}</td>
+          <td>{% if p.medical_record.allergies %}<span class="badge badge-soft"><i class="bi bi-exclamation-triangle"></i> {{ p.medical_record.allergies|truncatechars:30 }}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td class="nowrap">{{ p.last_visit|date:"j M Y" }}</td>
+          <td class="nowrap"><a href="{% url 'records:patient_record' p.pk %}" class="btn btn-light btn-sm"><i class="bi bi-folder2-open"></i> Dossier</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <span class="icon-badge icon-badge-neutral"><i class="bi bi-people"></i></span>
+    <strong>{% if query %}Aucun patient trouvé{% else %}Aucun patient pour le moment{% endif %}</strong>
+    <p>{% if query %}Essayez un autre nom.{% else %}Un patient apparaît ici dès que vous acceptez sa demande de rendez-vous.{% endif %}</p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,228 @@
+{% extends layout %}
+
+{% block title %}{% if role == "patient" %}Mon dossier médical{% else %}Dossier · {{ patient.get_full_name }}{% endif %}{% endblock %}
+
+{% block content %}
+{% if role == "doctor" %}<a href="{% url 'records:patients' %}" class="back-link"><i class="bi bi-arrow-left"></i> Mes patients</a>{% endif %}
+
+<div class="page-head">
+  {% if role == "patient" %}
+  <div>
+    <h1>Mon dossier médical</h1>
+    <p>Vos informations de santé, vos ordonnances et vos documents. Seuls les médecins qui vous suivent y ont accès.</p>
+  </div>
+  <a href="{% url 'records:add_my_document' %}" class="btn btn-light"><i class="bi bi-file-earmark-plus"></i> Ajouter un document</a>
+  {% else %}
+  <div class="record-identity">
+    <span class="avatar avatar-lg">{{ patient.first_name|slice:":1"|upper }}{{ patient.last_name|slice:":1"|upper }}</span>
+    <div>
+      <h1>{{ patient.get_full_name }}</h1>
+      <p>{% if patient_age is not None %}{{ patient_age }} ans{% else %}Âge non renseigné{% endif %}{% if patient.patient_profile.gender %} · {{ patient.patient_profile.get_gender_display }}{% endif %} · {{ patient.patient_profile.phone }}</p>
+    </div>
+  </div>
+  <div class="room-head-actions">
+    <a href="{% url 'records:add_note' patient.pk %}" class="btn btn-light"><i class="bi bi-journal-plus"></i> Ajouter une note</a>
+    {% if followup_appointment %}<a href="{% url 'followups:create_plan' patient.pk followup_appointment.pk %}" class="btn btn-light"><i class="bi bi-list-check"></i> Créer un plan de suivi</a>{% endif %}
+    <a href="{% url 'records:new_prescription' patient.pk %}" class="btn btn-primary"><i class="bi bi-prescription2"></i> Nouvelle ordonnance</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if record.allergies %}
+<div class="alert alert-danger record-allergy"><i class="bi bi-exclamation-triangle"></i><p><strong>Allergies :</strong> {{ record.allergies }}</p></div>
+{% endif %}
+
+<nav class="tabs record-tabs" aria-label="Sections du dossier">
+  {% for t in tabs %}
+  <a href="?onglet={{ t.key }}" class="{% if tab == t.key %}active{% endif %}"{% if tab == t.key %} aria-current="page"{% endif %}><i class="bi bi-{{ t.icon }}"></i> {{ t.label }}{% if t.count %} <span class="tab-count">{{ t.count }}</span>{% endif %}</a>
+  {% endfor %}
+</nav>
+
+{% if tab == "apercu" %}
+<div class="dash-grid">
+  <div class="col-7">
+    <section class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-heart-pulse"></i> Informations médicales</h3>
+        <a href="{% if role == 'patient' %}{% url 'records:edit_my_record' %}{% else %}{% url 'records:doctor_edit_record' patient.pk %}{% endif %}" class="btn btn-light btn-sm"><i class="bi bi-pencil"></i> Modifier</a>
+      </div>
+      {% if record.is_empty %}
+      <div class="empty-state">
+        <span class="icon-badge"><i class="bi bi-heart-pulse"></i></span>
+        <strong>{% if role == "patient" %}Complétez votre dossier{% else %}Dossier encore vide{% endif %}</strong>
+        <p>{% if role == "patient" %}Allergies, traitements, antécédents : ces informations aident le médecin à vous soigner en toute sécurité.{% else %}Le patient n'a pas encore renseigné ses informations. Vous pouvez les compléter.{% endif %}</p>
+        {% if role == "patient" %}<a href="{% url 'records:edit_my_record' %}" class="btn btn-primary">Compléter mon dossier</a>{% endif %}
+      </div>
+      {% else %}
+      <div class="card-body">
+        <div class="vitals">
+          <div><span>Groupe sanguin</span><strong>{{ record.get_blood_type_display|default:"—" }}</strong></div>
+          <div><span>Taille</span><strong>{% if record.height_cm %}{{ record.height_cm }} cm{% else %}—{% endif %}</strong></div>
+          <div><span>Poids</span><strong>{% if record.weight_kg %}{{ record.weight_kg }} kg{% else %}—{% endif %}</strong></div>
+          <div><span>IMC</span><strong>{{ record.bmi|default:"—" }}</strong></div>
+        </div>
+        <dl class="dl">
+          <dt>Allergies</dt><dd>{{ record.allergies|default:"Aucune connue"|linebreaksbr }}</dd>
+          <dt>Maladies chroniques</dt><dd>{{ record.chronic_conditions|default:"—"|linebreaksbr }}</dd>
+          <dt>Traitements en cours</dt><dd>{{ record.current_treatments|default:"—"|linebreaksbr }}</dd>
+          <dt>Antécédents</dt><dd>{{ record.medical_history|default:"—"|linebreaksbr }}</dd>
+          <dt>Antécédents familiaux</dt><dd>{{ record.family_history|default:"—"|linebreaksbr }}</dd>
+          <dt>Personne à prévenir</dt><dd>{{ record.emergency_contact|default:"—" }}</dd>
+        </dl>
+        <p class="small text-muted" style="margin:1rem 0 0">Mis à jour le {{ record.updated_at|date:"j F Y à H:i" }}{% if record.updated_by %} par {% if record.updated_by_id == patient.pk %}{% if role == "patient" %}vous{% else %}le patient{% endif %}{% else %}Dr {{ record.updated_by.get_full_name }}{% endif %}{% endif %}</p>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="col-5">
+    <section class="card" style="margin-bottom:1.25rem">
+      <div class="card-header"><h3><i class="bi bi-clock-history"></i> Consultations</h3>{% if role == "patient" %}<a href="{% url 'teleconsult:list' %}">Tout voir</a>{% endif %}</div>
+      <div class="card-body-flush">
+        {% for s in consultations|slice:":4" %}
+        {% with a=s.room.appointment %}
+        {% if role == "patient" or a.doctor_id == user.pk %}
+        <a href="{% url 'teleconsult:summary' s.room.code %}" class="list-item" style="color:inherit">
+        {% else %}
+        <div class="list-item">
+        {% endif %}
+          <div class="date-tile"><span>{{ a.start|date:"M" }}</span><strong>{{ a.start|date:"j" }}</strong></div>
+          <div class="list-main"><strong>{{ s.diagnosis|truncatechars:60 }}</strong><span>Dr {{ a.doctor.get_full_name }} · {{ a.specialty.name|default:"Consultation" }}</span></div>
+        {% if role == "patient" or a.doctor_id == user.pk %}
+          <i class="bi bi-chevron-right text-muted"></i>
+        </a>
+        {% else %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        {% empty %}
+        <div class="empty-state"><span class="icon-badge icon-badge-neutral"><i class="bi bi-camera-video"></i></span><strong>Aucune consultation terminée</strong></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-capsule"></i> Ordonnances récentes</h3>{% if prescriptions %}<a href="?onglet=ordonnances">Tout voir</a>{% endif %}</div>
+      <div class="card-body-flush">
+        {% for p in prescriptions|slice:":3" %}
+        {% include "records/_prescription_row.html" %}
+        {% empty %}
+        <div class="empty-state"><span class="icon-badge icon-badge-neutral"><i class="bi bi-capsule"></i></span><strong>Aucune ordonnance</strong></div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+
+{% elif tab == "notes" %}
+<section class="card">
+  <div class="card-header">
+    <h3><i class="bi bi-journal-text"></i> Notes de consultation</h3>
+    {% if role == "doctor" %}<a href="{% url 'records:add_note' patient.pk %}" class="btn btn-light btn-sm"><i class="bi bi-plus-lg"></i> Ajouter</a>{% endif %}
+  </div>
+  {% for n in notes %}
+  <article class="note">
+    <header>
+      <div>
+        <h4>{{ n.title }}</h4>
+        <span>Dr {{ n.author.get_full_name|default:"—" }} · {{ n.created_at|date:"j F Y à H:i" }}{% if n.appointment %} · consultation du {{ n.appointment.start|date:"j F Y" }}{% endif %}</span>
+      </div>
+      {% if not n.visible_to_patient %}<span class="badge badge-neutral"><i class="bi bi-eye-slash"></i> Réservée aux médecins</span>{% endif %}
+    </header>
+    <p>{{ n.body|linebreaksbr }}</p>
+  </article>
+  {% empty %}
+  <div class="empty-state">
+    <span class="icon-badge icon-badge-neutral"><i class="bi bi-journal-text"></i></span>
+    <strong>Aucune note</strong>
+    <p>{% if role == "patient" %}Les notes que vos médecins partagent avec vous apparaîtront ici.{% else %}Ajoutez une note pour garder une trace du suivi de ce patient.{% endif %}</p>
+  </div>
+  {% endfor %}
+</section>
+
+{% elif tab == "ordonnances" %}
+<section class="card">
+  <div class="card-header">
+    <h3><i class="bi bi-capsule"></i> Ordonnances</h3>
+    {% if role == "doctor" %}<a href="{% url 'records:new_prescription' patient.pk %}" class="btn btn-light btn-sm"><i class="bi bi-plus-lg"></i> Nouvelle ordonnance</a>{% endif %}
+  </div>
+  <div class="card-body-flush">
+    {% for p in prescriptions %}
+    {% include "records/_prescription_row.html" %}
+    {% empty %}
+    <div class="empty-state">
+      <span class="icon-badge icon-badge-neutral"><i class="bi bi-capsule"></i></span>
+      <strong>Aucune ordonnance</strong>
+      <p>{% if role == "patient" %}Les ordonnances rédigées par vos médecins apparaîtront ici.{% else %}Rédigez une ordonnance, le patient la retrouvera dans son espace.{% endif %}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% elif tab == "documents" %}
+<section class="card">
+  <div class="card-header">
+    <h3><i class="bi bi-folder2"></i> Documents</h3>
+    <a href="{% if role == 'patient' %}{% url 'records:add_my_document' %}{% else %}{% url 'records:doctor_add_document' patient.pk %}{% endif %}" class="btn btn-light btn-sm"><i class="bi bi-plus-lg"></i> Ajouter</a>
+  </div>
+  <div class="card-body-flush">
+    {% for d in documents %}
+    <div class="list-item">
+      <span class="icon-badge icon-badge-sm"><i class="bi bi-{{ d.icon }}"></i></span>
+      <div class="list-main">
+        <strong>{{ d.title }}</strong>
+        <span>{% if d.appointment_id %}<i class="bi bi-camera-video"></i> Partagé en consultation · {% endif %}{{ d.get_kind_display }}{% if d.document_date %} · {{ d.document_date|date:"j M Y" }}{% endif %} · {{ d.extension }}, {{ d.size_label }} · ajouté par {% if d.uploaded_by_id == patient.pk %}{% if role == "patient" %}vous{% else %}le patient{% endif %}{% elif d.uploaded_by_id == user.pk %}vous{% else %}Dr {{ d.uploaded_by.get_full_name }}{% endif %}</span>
+      </div>
+      <div class="list-actions">
+        <a href="{% url 'records:document' d.pk %}" target="_blank" rel="noopener" class="btn btn-light btn-sm"><i class="bi bi-eye"></i> Ouvrir</a>
+        {% if role == "doctor" %}<a href="{% url 'records:document_analysis' d.pk %}" class="btn btn-light btn-sm"><i class="bi bi-robot"></i> Compte rendu IA</a>{% endif %}
+        <a href="{% url 'records:document' d.pk %}?telecharger=1" class="btn btn-ghost btn-sm" aria-label="Télécharger {{ d.title }}"><i class="bi bi-download"></i></a>
+        {% if d.uploaded_by_id == user.pk %}
+        <form method="post" action="{% url 'records:document_delete' d.pk %}" data-confirm="Supprimer « {{ d.title }} » ?" style="display:inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-ghost btn-sm" aria-label="Supprimer {{ d.title }}"><i class="bi bi-trash"></i></button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+      <span class="icon-badge icon-badge-neutral"><i class="bi bi-folder2-open"></i></span>
+      <strong>Aucun document</strong>
+      <p>Analyses, radios, courriers… Ajoutez-les pour les avoir sous la main pendant les consultations.</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% elif tab == "acces" %}
+<section class="card">
+  <div class="card-header"><h3><i class="bi bi-shield-lock"></i> Qui a accédé à mon dossier</h3><span class="small text-muted">100 derniers accès</span></div>
+  <div class="card-body" style="padding-bottom:0">
+    <p class="small text-muted" style="margin:0">Chaque ouverture ou modification de votre dossier par un médecin est enregistrée ici. Seuls les médecins avec qui vous avez eu un rendez-vous confirmé peuvent y accéder.</p>
+  </div>
+  {% if logs %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Date</th><th>Par</th><th>Action</th><th>Détail</th></tr></thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="nowrap">{{ log.created_at|date:"j M Y, H:i" }}</td>
+          <td class="nowrap"><strong>{% if log.user_id == patient.pk %}Vous{% elif log.user.doctor_profile %}Dr {{ log.user.get_full_name }}{% else %}{{ log.user.get_full_name|default:"Compte supprimé" }}{% endif %}</strong></td>
+          <td><i class="bi bi-{{ log.icon }} text-muted"></i> {{ log.get_action_display }}</td>
+          <td class="text-muted">{{ log.detail|default:"—"|truncatechars:70 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <span class="icon-badge icon-badge-neutral"><i class="bi bi-shield-check"></i></span>
+    <strong>Aucun accès pour le moment</strong>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

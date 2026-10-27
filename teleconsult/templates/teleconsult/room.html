@@ -1,0 +1,175 @@
+{% extends layout %}
+{% load static %}
+
+{% block title %}Téléconsultation · {{ other_label }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'teleconsult:list' %}" class="back-link"><i class="bi bi-arrow-left"></i> Consultations</a>
+
+<div class="page-head">
+  <div>
+    <h1>Téléconsultation avec {{ other_label }}</h1>
+    <p>{{ appointment.start|date:"l j F Y"|capfirst }} · {{ appointment.start|time:"H:i" }}–{{ appointment.end|time:"H:i" }} · {{ appointment.specialty.name|default:"Consultation" }}</p>
+  </div>
+  <div class="room-head-actions">
+    <span class="badge room-status room-{{ room.status }}" data-room-badge>{% if room.is_open %}<span class="live-dot"></span>{% endif %}{{ room.get_status_display }}</span>
+    {% if role == "doctor" and room.is_open %}
+    <a href="{% url 'teleconsult:finish' room.code %}" class="btn btn-dark"><i class="bi bi-stop-circle"></i> Terminer la consultation</a>
+    {% endif %}
+    {% if room.is_closed and room.summary %}
+    <a href="{% url 'teleconsult:summary' room.code %}" class="btn btn-primary"><i class="bi bi-file-earmark-text"></i> Compte rendu</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if room.status == "scheduled" %}
+<!-- Salle d'attente du patient : la consultation démarre quand le médecin entre -->
+<section class="card waiting-card" data-lobby data-chat-url="{% url 'teleconsult:chat' room.code %}">
+  <span class="lobby-pulse"><span class="avatar avatar-lg">{{ other.first_name|slice:":1"|upper }}{{ other.last_name|slice:":1"|upper }}</span></span>
+  <h2>Vous êtes dans la salle d'attente</h2>
+  <p>La consultation commencera dès que <strong>{{ other_label }}</strong> entrera dans la salle. Restez sur cette page : elle s'ouvrira automatiquement.</p>
+  <p class="lobby-status"><span class="spinner spinner-dark" aria-hidden="true"></span> <span data-lobby-status>En attente du médecin…</span></p>
+  <p class="form-help">Rendez-vous prévu le {{ appointment.start|date:"l j F"|lower }} à {{ appointment.start|time:"H:i" }}. Pensez à autoriser la caméra et le micro quand le navigateur vous le demandera.</p>
+</section>
+
+{% elif room.is_open %}
+<!-- Salle ouverte : vidéo + chat -->
+<div class="room-grid"
+     data-room
+     data-role="{{ role }}"
+     data-chat-url="{% url 'teleconsult:chat' room.code %}"
+     data-signal-url="{% url 'teleconsult:signal' room.code %}"
+     data-share-url="{% url 'teleconsult:share_document' room.code %}"
+     data-csrf="{{ csrf_token }}"
+     data-other="{{ other_label }}">
+  <div class="room-main">
+    <section class="card video-card">
+      <div class="video-stage">
+        <video class="video-remote" data-remote-video autoplay playsinline></video>
+        <div class="video-placeholder" data-remote-placeholder>
+          <span class="avatar avatar-lg">{{ other.first_name|slice:":1"|upper }}{{ other.last_name|slice:":1"|upper }}</span>
+          <strong>{{ other_label }}</strong>
+          <span data-remote-status>Activez votre caméra pour démarrer l'appel vidéo.</span>
+        </div>
+        <video class="video-local" data-local-video autoplay playsinline muted hidden></video>
+        <button type="button" class="btn btn-white btn-sm video-sound" data-unmute hidden><i class="bi bi-volume-mute"></i> Activer le son</button>
+        <span class="video-timer" data-timer data-opened="{{ room.opened_at|date:'c' }}"><i class="bi bi-record-circle"></i> 00:00</span>
+      </div>
+      <div class="video-controls">
+        <button type="button" class="btn btn-primary" data-start-video><i class="bi bi-camera-video"></i> Activer la caméra</button>
+        <button type="button" class="ctrl-btn" data-toggle-mic hidden aria-label="Couper le micro"><i class="bi bi-mic"></i></button>
+        <button type="button" class="ctrl-btn" data-toggle-cam hidden aria-label="Couper la caméra"><i class="bi bi-camera-video"></i></button>
+        <button type="button" class="ctrl-btn ctrl-danger" data-hangup hidden aria-label="Raccrocher"><i class="bi bi-telephone-x"></i></button>
+      </div>
+      <p class="video-error" data-video-error hidden></p>
+    </section>
+
+    {% if role == "doctor" %}
+    <section class="card" style="margin-top:1.25rem">
+      <div class="card-header"><h3><i class="bi bi-person"></i> Patient</h3></div>
+      <div class="card-body">
+        <dl class="dl">
+          <dt>Nom</dt><dd>{{ appointment.patient.get_full_name }}</dd>
+          <dt>Âge</dt><dd>{% if patient_age is not None %}{{ patient_age }} ans{% else %}Non renseigné{% endif %}</dd>
+          <dt>Motif</dt><dd>{{ appointment.reason }}</dd>
+          <dt>Allergies</dt><dd>{% if record.allergies %}<span class="text-red">{{ record.allergies }}</span>{% else %}Aucune connue{% endif %}</dd>
+          {% if record.current_treatments %}<dt>Traitements</dt><dd>{{ record.current_treatments }}</dd>{% endif %}
+        </dl>
+        <a href="{% url 'records:patient_record' appointment.patient_id %}" target="_blank" rel="noopener" class="btn btn-light btn-sm" style="margin-top:1rem"><i class="bi bi-folder2-open"></i> Ouvrir le dossier médical</a>
+      </div>
+    </section>
+    {% if session %}<div style="margin-top:1.25rem">{% include "appointments/_triage_panel.html" %}</div>{% endif %}
+    {% endif %}
+  </div>
+
+  <aside class="card chat-card" aria-label="Messagerie">
+    <div class="card-header">
+      <h3><i class="bi bi-chat-dots"></i> Messagerie</h3>
+      <span class="presence" data-presence><span class="presence-dot"></span> <span data-presence-label>Hors ligne</span></span>
+    </div>
+    <div class="chat-messages" data-messages aria-live="polite">
+      <p class="chat-empty" data-chat-empty>Aucun message pour le moment. Écrivez à {{ other_label }}.</p>
+    </div>
+    <form class="chat-form" data-chat-form>
+      <label class="btn btn-light chat-attach" title="Joindre un document (analyse, bilan sanguin…)" data-attach-label>
+        <i class="bi bi-paperclip"></i><span class="visually-hidden">Joindre un document</span>
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" data-attach hidden>
+      </label>
+      <textarea name="body" rows="2" maxlength="2000" class="form-control" placeholder="Votre message…" aria-label="Votre message" required></textarea>
+      <button type="submit" class="btn btn-primary" aria-label="Envoyer"><i class="bi bi-send"></i></button>
+    </form>
+    <p class="chat-hint"><i class="bi bi-paperclip"></i> {% if role == "patient" %}Joignez vos analyses (bilan sanguin, radio…) : PDF, JPG ou PNG, 5 Mo max. Elles sont ajoutées à votre dossier médical et lues par une IA pour aider le médecin.{% else %}Les documents partagés sont ajoutés au dossier du patient. Un compte rendu IA est préparé pour vous.{% endif %}</p>
+  </aside>
+</div>
+{% if role == "doctor" %}
+<!-- AI reading of a document shared in the chat (doctor only) -->
+<dialog class="ai-dialog" data-ai-dialog aria-labelledby="ai-dialog-title">
+  <div class="ai-dialog-head">
+    <div>
+      <h3 id="ai-dialog-title"><i class="bi bi-robot"></i> Lecture IA du document</h3>
+      <span data-ai-doc></span>
+    </div>
+    <button type="button" class="btn btn-ghost btn-sm" data-ai-close aria-label="Fermer"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="ai-dialog-body" data-ai-body aria-live="polite"></div>
+  <div class="ai-dialog-foot">
+    <span class="small text-muted">Aide à la lecture générée par IA : vérifiez les valeurs sur le document original.</span>
+    <div>
+      <button type="button" class="btn btn-light btn-sm" data-ai-rerun hidden><i class="bi bi-arrow-repeat"></i> Relancer</button>
+      <a class="btn btn-primary btn-sm" data-ai-full target="_blank" rel="noopener" hidden><i class="bi bi-box-arrow-up-right"></i> Compte rendu complet</a>
+    </div>
+  </div>
+</dialog>
+{% endif %}
+<div class="alert alert-info" data-room-closed hidden style="margin-top:1.25rem"><i class="bi bi-check2-circle"></i><p>La consultation est terminée. <a href="{% url 'teleconsult:room' room.code %}">Afficher le compte rendu</a></p></div>
+
+{% else %}
+<!-- Salle fermée : historique -->
+<div class="dash-grid">
+  <div class="col-7">
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-chat-dots"></i> Historique des messages</h3><span class="small text-muted">{% if room.duration_minutes %}Durée : {{ room.duration_minutes }} min{% endif %}</span></div>
+      <div class="chat-messages chat-transcript">
+        {% for m in transcript %}
+          {% if m.kind == "system" %}
+          <div class="msg-system">{{ m.body }} · {{ m.created_at|time:"H:i" }}</div>
+          {% elif m.kind == "document" %}
+          <div class="msg{% if m.sender_id == user.pk %} mine{% endif %}">
+            <span class="msg-meta">{% if m.sender_id == appointment.doctor_id %}Dr {% endif %}{{ m.sender.get_full_name }} · {{ m.created_at|time:"H:i" }}</span>
+            <div class="msg-bubble msg-doc">
+              <i class="bi bi-file-earmark-medical"></i>
+              <div><strong>{{ m.document.title|default:m.body }}</strong>{% if m.document %}<span>{{ m.document.get_kind_display }} · {{ m.document.extension }}, {{ m.document.size_label }}</span>{% else %}<span>Document supprimé</span>{% endif %}</div>
+              {% if m.document %}<div class="msg-doc-actions"><a href="{% url 'records:document' m.document.pk %}" target="_blank" rel="noopener">Ouvrir</a>{% if role == "doctor" %}<a href="{% url 'records:document_analysis' m.document.pk %}" target="_blank" rel="noopener"><i class="bi bi-robot"></i> Compte rendu IA</a>{% endif %}</div>{% endif %}
+            </div>
+          </div>
+          {% else %}
+          <div class="msg{% if m.sender_id == user.pk %} mine{% endif %}">
+            <span class="msg-meta">{% if m.sender_id == appointment.doctor_id %}Dr {% endif %}{{ m.sender.get_full_name }} · {{ m.created_at|time:"H:i" }}</span>
+            <div class="msg-bubble">{{ m.body|linebreaksbr }}</div>
+          </div>
+          {% endif %}
+        {% empty %}
+        <p class="chat-empty">Aucun message échangé.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+  <div class="col-5">
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-file-earmark-text"></i> Compte rendu</h3></div>
+      <div class="card-body">
+        {% if room.summary %}
+        <p class="small text-muted" style="margin-top:0">Rédigé le {{ room.summary.created_at|date:"j F Y à H:i" }}</p>
+        <p><strong>Diagnostic :</strong> {{ room.summary.diagnosis|truncatechars:160 }}</p>
+        <a href="{% url 'teleconsult:summary' room.code %}" class="btn btn-primary btn-block">Lire le compte rendu</a>
+        {% else %}
+        <p class="text-muted">Pas de compte rendu.</p>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}{% if not room.is_closed %}<script src="{% static 'core/js/room.js' %}?v={{ asset_version }}" defer></script>{% endif %}{% endblock %}

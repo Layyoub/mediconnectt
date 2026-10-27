@@ -1,0 +1,63 @@
+{% comment %}Automatic analysis of a doctor's application (back-office). Needs `doctor` and `verification`.{% endcomment %}
+<section class="card verif-card" style="margin-bottom:1.25rem"{% if verification.is_running %} data-reload-while-running{% endif %}>
+  <div class="card-header">
+    <h3><i class="bi bi-robot"></i> Analyse automatique du dossier</h3>
+    {% if verification and not verification.is_running %}
+    <form method="post" action="{% url 'backoffice:doctor_verify' doctor.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-light btn-sm"><i class="bi bi-arrow-repeat"></i> Analyser à nouveau</button>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if not verification %}
+  <div class="empty-state">
+    <span class="icon-badge icon-badge-neutral"><i class="bi bi-robot"></i></span>
+    <strong>Dossier pas encore analysé</strong>
+    <p>L'agent compare le diplôme et l'attestation de l'Ordre aux modèles officiels et vérifie le nom, le numéro d'inscription, les dates et les signes de falsification, ainsi que la cohérence du compte.</p>
+    <form method="post" action="{% url 'backoffice:doctor_verify' doctor.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary"><i class="bi bi-play-fill"></i> Lancer l'analyse</button>
+    </form>
+  </div>
+
+  {% elif verification.is_running %}
+  <div class="empty-state">
+    <span class="spinner spinner-dark" aria-hidden="true"></span>
+    <strong style="margin-top:.75rem">Analyse en cours…</strong>
+    <p>L'agent lit les justificatifs. Cette page se met à jour automatiquement.</p>
+  </div>
+
+  {% elif verification.status == "error" or verification.is_stale %}
+  <div class="card-body">
+    <div class="alert alert-danger" style="margin:0"><i class="bi bi-exclamation-octagon"></i><p>L'analyse n'a pas pu aboutir{% if verification.error %} ({{ verification.error }}){% endif %}. Relancez-la ou vérifiez le dossier manuellement.</p></div>
+  </div>
+
+  {% else %}
+  <div class="card-body">
+    <div class="verif-head verif-{{ verification.risk }}">
+      <i class="bi bi-{% if verification.risk == 'low' %}shield-check{% elif verification.risk == 'medium' %}shield-exclamation{% else %}shield-x{% endif %}"></i>
+      <div>
+        <strong>{{ verification.get_risk_display }}</strong>
+        <span>{{ verification.get_recommendation_display }}</span>
+      </div>
+    </div>
+    <p class="verif-summary">{{ verification.summary }}</p>
+    {% if not verification.ai_used %}
+    <div class="alert alert-info" style="margin:0 0 1rem"><i class="bi bi-info-circle"></i><p>Analyse IA non effectuée{% if verification.error %} ({{ verification.error }}){% else %} (clé OpenAI absente ou analyse IA désactivée){% endif %} : seuls les contrôles automatiques ont été faits.</p></div>
+    {% endif %}
+
+    {% if verification.ai_checks %}
+    <h4 class="verif-group"><i class="bi bi-file-earmark-medical"></i> Lecture des justificatifs (IA)</h4>
+    <ul class="verif-list">{% for c in verification.ai_checks %}{% include "verification/_check.html" %}{% endfor %}</ul>
+    {% endif %}
+    <h4 class="verif-group"><i class="bi bi-cpu"></i> Contrôles automatiques</h4>
+    <ul class="verif-list">{% for c in verification.rule_checks %}{% include "verification/_check.html" %}{% endfor %}</ul>
+
+    <p class="small text-muted" style="margin:1rem 0 0">
+      Analyse du {{ verification.finished_at|default:verification.created_at|date:"j F Y à H:i" }}{% if verification.triggered_by %} lancée par {{ verification.triggered_by.get_full_name|default:verification.triggered_by.email }}{% else %} (automatique à l'inscription){% endif %}{% if verification.ai_model %} · modèle {{ verification.ai_model }}{% endif %}.
+      C'est une aide à la décision : l'IA ne consulte pas le registre de l'Ordre et peut se tromper. Ouvrez toujours les justificatifs avant de décider.
+    </p>
+  </div>
+  {% endif %}
+</section>

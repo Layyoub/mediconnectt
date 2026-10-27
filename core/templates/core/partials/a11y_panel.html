@@ -1,0 +1,70 @@
+{% comment %}Accessibility panel (every page). Settings are kept in this browser and applied before the page is drawn (see base.html).{% endcomment %}
+<dialog class="ai-dialog a11y-dialog" data-a11y-dialog aria-labelledby="a11y-title">
+  <div class="ai-dialog-head">
+    <div>
+      <h3 id="a11y-title"><i class="bi bi-universal-access-circle"></i> Accessibilité</h3>
+      <span>Vos réglages sont enregistrés sur cet appareil.</span>
+    </div>
+    <button type="button" class="btn btn-ghost btn-sm" data-a11y-close aria-label="Fermer"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="ai-dialog-body">
+    <fieldset class="a11y-group">
+      <legend><i class="bi bi-fonts"></i> Taille du texte</legend>
+      <div class="segmented">
+        <label><input type="radio" name="a11y-size" value=""><span>Normal</span></label>
+        <label><input type="radio" name="a11y-size" value="lg"><span style="font-size:1.05em">Grand</span></label>
+        <label><input type="radio" name="a11y-size" value="xl"><span style="font-size:1.2em">Très grand</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="a11y-group">
+      <legend><i class="bi bi-circle-half"></i> Thème</legend>
+      <div class="segmented">
+        <label><input type="radio" name="a11y-theme" value="light"><span><i class="bi bi-sun"></i> Clair</span></label>
+        <label><input type="radio" name="a11y-theme" value="dark"><span><i class="bi bi-moon-stars"></i> Sombre</span></label>
+        <label><input type="radio" name="a11y-theme" value="system"><span><i class="bi bi-display"></i> Système</span></label>
+      </div>
+      <p class="form-help">« Système » suit le réglage clair/sombre de votre ordinateur ou téléphone.</p>
+    </fieldset>
+
+    <fieldset class="a11y-group">
+      <legend><i class="bi bi-eye"></i> Lisibilité</legend>
+      <label class="a11y-switch">
+        <input type="checkbox" name="a11y-contrast" role="switch">
+        <span class="a11y-switch-track" aria-hidden="true"></span>
+        <span><strong>Contraste élevé</strong><small>Couleurs plus marquées, liens soulignés, bordures et focus bien visibles.</small></span>
+      </label>
+    </fieldset>
+
+    <fieldset class="a11y-group" data-a11y-shortcuts>
+      <legend><i class="bi bi-keyboard"></i> Raccourcis clavier</legend>
+      <dl class="kbd-list">
+        {% for s in shortcuts %}<div><dt><kbd>Alt</kbd> + <kbd>Maj</kbd> + <kbd>{{ s.key }}</kbd></dt><dd>{{ s.label }}</dd></div>{% endfor %}
+        <div><dt><kbd>Alt</kbd> + <kbd>Maj</kbd> + <kbd>A</kbd></dt><dd>Ouvrir ce panneau</dd></div>
+        <div><dt><kbd>?</kbd></dt><dd>Afficher les raccourcis</dd></div>
+        <div><dt><kbd>Tab</kbd> puis <kbd>Entrée</kbd></dt><dd>« Aller au contenu » en début de page</dd></div>
+        <div><dt><kbd>Échap</kbd></dt><dd>Fermer une fenêtre</dd></div>
+      </dl>
+      {% if user_role == "patient" or user_role == "doctor" %}
+      <p class="kbd-sub">Pendant une téléconsultation</p>
+      <dl class="kbd-list">
+        <div><dt><kbd>Alt</kbd> + <kbd>Maj</kbd> + <kbd>M</kbd></dt><dd>Couper / rétablir le micro</dd></div>
+        <div><dt><kbd>Alt</kbd> + <kbd>Maj</kbd> + <kbd>V</kbd></dt><dd>Couper / rétablir la caméra</dd></div>
+        <div><dt><kbd>Alt</kbd> + <kbd>Maj</kbd> + <kbd>T</kbd></dt><dd>Écrire dans le chat</dd></div>
+      </dl>
+      {% endif %}
+    </fieldset>
+    {% if handsfree_enabled %}
+    {% include "handsfree/_panel.html" %}
+    {% endif %}
+  </div>
+
+  <div class="ai-dialog-foot">
+    <button type="button" class="btn btn-light btn-sm" data-a11y-reset><i class="bi bi-arrow-counterclockwise"></i> Réinitialiser</button>
+    <button type="button" class="btn btn-primary btn-sm" data-a11y-close>Terminé</button>
+  </div>
+</dialog>
+{% if handsfree_enabled %}
+{% include "handsfree/_panel.html" with dialogs_only=True %}
+{% endif %}

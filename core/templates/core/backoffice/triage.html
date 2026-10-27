@@ -1,0 +1,86 @@
+{% extends "core/backoffice/_layout.html" %}
+
+{% block title %}Triage · Back-office{% endblock %}
+{% block breadcrumb %}<a href="{% url 'backoffice:overview' %}">Back-office</a><i class="bi bi-chevron-right small"></i><strong>Triage</strong>{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Triage</h1>
+    <p>Suivi des évaluations et gestion des règles d'alerte (red flags).</p>
+  </div>
+  <a href="{% url 'admin:triage_redflagrule_add' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nouvelle règle</a>
+</div>
+
+<div class="dash-grid">
+  <div class="col-3"><div class="card stat-card"><span class="icon-badge"><i class="bi bi-clipboard2-check"></i></span><div><strong>{{ total }}</strong><span>Évaluations terminées</span></div></div></div>
+  <div class="col-3"><div class="card stat-card"><span class="icon-badge icon-badge-neutral"><i class="bi bi-hourglass-split"></i></span><div><strong>{{ in_progress }}</strong><span>En cours</span></div></div></div>
+  {% for l in levels %}{% if l.code == "urgent" %}
+  <div class="col-3"><div class="card stat-card"><span class="icon-badge icon-badge-solid"><i class="bi bi-exclamation-octagon"></i></span><div><strong>{{ l.count }}</strong><span>Niveau urgent</span></div></div></div>
+  {% endif %}{% endfor %}
+  <div class="col-3"><div class="card stat-card"><span class="icon-badge"><i class="bi bi-flag"></i></span><div><strong>{{ rules|length }}</strong><span>Règles d'alerte</span></div></div></div>
+
+  <div class="col-5">
+    <section class="card" style="height:100%">
+      <div class="card-header"><h3><i class="bi bi-bar-chart"></i> Répartition par niveau</h3></div>
+      <div class="card-body">
+        {% for l in levels %}
+        <div class="level-bar">
+          <div class="level-bar-head"><span class="badge triage-{{ l.code }}">{{ l.label }}</span><span class="small text-muted">{{ l.count }} · {{ l.percent }} %</span></div>
+          <div class="level-bar-track"><span class="fill-{{ l.code }}" style="width: {{ l.percent }}%"></span></div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <div class="col-7">
+    <section class="card" style="height:100%">
+      <div class="card-header"><h3><i class="bi bi-clock-history"></i> Dernières évaluations</h3><span class="small text-muted">Patients anonymisés</span></div>
+      <div class="card-body-flush">
+        {% for r in recent %}
+        <div class="list-item">
+          <span class="avatar avatar-neutral">{{ r.session.patient.first_name|slice:":1"|upper }}{{ r.session.patient.last_name|slice:":1"|upper }}</span>
+          <div class="list-main"><strong>{{ r.get_suggested_specialty_display }}</strong><span>{{ r.created_at|date:"j M Y, H:i" }} · score {{ r.score }}{% if r.by_ai %} · analyse IA{% endif %}</span></div>
+          <span class="badge triage-{{ r.level }}">{{ r.get_level_display }}</span>
+        </div>
+        {% empty %}
+        <div class="empty-state"><span class="icon-badge icon-badge-neutral"><i class="bi bi-clipboard2-pulse"></i></span><strong>Aucune évaluation</strong><p>Les évaluations des patients apparaîtront ici.</p></div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <div class="col-12">
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-flag"></i> Règles d'alerte</h3><a href="{% url 'admin:triage_redflagrule_changelist' %}">Modifier dans l'admin technique</a></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Règle</th><th>Condition</th><th>Niveau imposé</th><th>Déclenchée</th><th>Statut</th><th></th></tr></thead>
+          <tbody>
+            {% for rule in rules %}
+            <tr>
+              <td><strong>{{ rule.name }}</strong></td>
+              <td class="small">
+                {% if rule.symptom %}{{ rule.get_symptom_display }}{% if rule.min_severity > 1 %} ({{ rule.get_min_severity_display|lower }} ou plus){% endif %}{% endif %}
+                {% if rule.combined_symptom %} + {{ rule.get_combined_symptom_display }}{% endif %}
+                {% if rule.min_temperature %}{% if rule.symptom %} + {% endif %}Température ≥ {{ rule.min_temperature }} °C{% endif %}
+              </td>
+              <td><span class="badge triage-{{ rule.level }}">{{ rule.get_level_display }}</span></td>
+              <td>{{ rule.times }} fois</td>
+              <td>{% if rule.is_active %}<span class="badge badge-outline">Active</span>{% else %}<span class="badge badge-neutral">Inactive</span>{% endif %}</td>
+              <td>
+                <form method="post" action="{% url 'backoffice:toggle_rule' rule.pk %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-light btn-sm">{% if rule.is_active %}Désactiver{% else %}Activer{% endif %}</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

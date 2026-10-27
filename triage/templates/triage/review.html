@@ -1,0 +1,49 @@
+{% extends "core/patient/_layout.html" %}
+
+{% block title %}Nouvelle évaluation · Vérification{% endblock %}
+
+{% block content %}
+<div class="wizard-wrap">
+  <a href="{% url 'triage:symptoms' session.pk %}" class="back-link"><i class="bi bi-arrow-left"></i> Modifier les symptômes</a>
+  {% include "triage/_stepper.html" %}
+
+  <section class="card">
+    <div class="card-body wizard-body">
+      <h1 class="wizard-title">Vérifiez vos réponses</h1>
+      <p class="text-muted">Assurez-vous que tout est correct avant de lancer l'analyse.</p>
+
+      <div class="review-block">
+        <div class="review-head"><h3>Contexte</h3><a href="{% url 'triage:context' session.pk %}"><i class="bi bi-pencil"></i> Modifier</a></div>
+        <dl class="dl">
+          <dt>Motif</dt><dd>{{ session.chief_complaint|linebreaksbr }}</dd>
+          <dt>Température</dt><dd>{% if session.temperature %}{{ session.temperature }} °C{% else %}Non mesurée{% endif %}</dd>
+          <dt>Âge</dt><dd>{% if session.age is not None %}{{ session.age }} ans{% else %}Non renseigné dans votre profil{% endif %}</dd>
+          <dt>Facteurs de risque</dt><dd>{{ session.risk_factor_labels|join:", "|default:"Aucun" }}</dd>
+        </dl>
+      </div>
+
+      <div class="review-block">
+        <div class="review-head"><h3>Symptômes ({{ entries|length }})</h3><a href="{% url 'triage:symptoms' session.pk %}"><i class="bi bi-pencil"></i> Modifier</a></div>
+        <ul class="review-list">
+          {% for e in entries %}
+          <li>
+            <i class="bi bi-{{ e.info.icon }}"></i>
+            <strong>{{ e.get_symptom_display }}</strong>
+            <span class="badge {% if e.severity == 3 %}badge-red{% elif e.severity == 2 %}badge-soft{% else %}badge-neutral{% endif %}">{{ e.get_severity_display }}</span>
+            <span class="text-muted small">{{ e.get_duration_display }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <form method="post" data-loading-form>
+        {% csrf_token %}
+        <div class="wizard-actions">
+          <a href="{% url 'triage:symptoms' session.pk %}" class="btn btn-ghost"><i class="bi bi-arrow-left"></i> Retour</a>
+          <button type="submit" class="btn btn-primary btn-lg" data-loading-text="Analyse en cours…"><i class="bi bi-cpu"></i> Analyser mes symptômes</button>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>
+{% endblock %}

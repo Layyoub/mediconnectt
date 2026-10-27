@@ -1,0 +1,9 @@
+<a href="{% url 'records:prescription' p.code %}" class="list-item" style="color:inherit">
+  <span class="icon-badge icon-badge-sm"><i class="bi bi-prescription2"></i></span>
+  <div class="list-main">
+    <strong>{{ p.title }}</strong>
+    <span>{% if show_patient %}{{ p.record.patient.get_full_name }}{% else %}Dr {{ p.doctor.get_full_name|default:"—" }}{% endif %} · {{ p.created_at|date:"j M Y" }} · {{ p.code }}</span>
+  </div>
+  {% if p.is_valid %}<span class="badge badge-soft">Valable</span>{% else %}<span class="badge badge-neutral">Expirée</span>{% endif %}
+  <i class="bi bi-chevron-right text-muted"></i>
+</a>

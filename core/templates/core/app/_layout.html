@@ -1,0 +1,53 @@
+{% extends "core/base.html" %}
+
+{% block body %}
+<div class="app">
+  <aside class="sidebar" data-sidebar aria-label="Menu de l'espace">
+    {% block sidebar_logo %}{% include "core/partials/logo.html" %}{% endblock %}
+    <nav>
+      {% block sidebar_nav %}{% endblock %}
+    </nav>
+    <div class="sidebar-foot">
+      {% block sidebar_help %}
+      <div class="sidebar-help">
+        <strong><i class="bi bi-telephone-outbound text-red"></i> Urgence vitale ?</strong>
+        <p>MediConnect ne remplace pas les services d'urgence. Appelez immédiatement le numéro d'urgence local.</p>
+      </div>
+      {% endblock %}
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-ghost btn-block" style="justify-content:flex-start"><i class="bi bi-box-arrow-left"></i> Se déconnecter</button>
+      </form>
+    </div>
+  </aside>
+  <div class="sidebar-backdrop" data-sidebar-backdrop></div>
+
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="icon-btn sidebar-toggle" type="button" data-sidebar-toggle aria-label="Ouvrir le menu"><i class="bi bi-list"></i></button>
+      {% block topbar_left %}
+      <div class="search input-icon">
+        <i class="bi bi-search"></i>
+        <input class="form-control" type="search" placeholder="Rechercher…" aria-label="Rechercher">
+      </div>
+      {% endblock %}
+      <div class="topbar-right">
+        <button type="button" class="icon-btn" data-a11y-open aria-label="Accessibilité (Alt+Maj+A)" title="Accessibilité (Alt+Maj+A)"><i class="bi bi-universal-access-circle"></i></button>
+        <a href="{% url 'teleconsult:notifications' %}" class="icon-btn" aria-label="Notifications{% if unread_notifications %} ({{ unread_notifications }} non lues){% endif %}"><i class="bi bi-bell"></i>{% if unread_notifications %}<span class="dot"></span>{% endif %}</a>
+        <a href="{% url 'account_profile' %}" class="user-chip" title="Mon compte">
+          <span class="avatar">{{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}</span>
+          <div>
+            <strong>{% block user_name %}{{ user.get_full_name|default:user.email }}{% endblock %}</strong>
+            <span>{% block user_role_label %}{% endblock %}</span>
+          </div>
+        </a>
+      </div>
+    </header>
+
+    <main class="app-content" id="contenu" tabindex="-1">
+      {% include "core/partials/messages.html" %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

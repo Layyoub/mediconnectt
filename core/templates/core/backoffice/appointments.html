@@ -1,0 +1,64 @@
+{% extends "core/backoffice/_layout.html" %}
+
+{% block title %}Rendez-vous · Back-office{% endblock %}
+{% block breadcrumb %}<a href="{% url 'backoffice:overview' %}">Back-office</a><i class="bi bi-chevron-right small"></i><strong>Rendez-vous</strong>{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Rendez-vous</h1>
+    <p>Suivi des demandes de téléconsultation et des spécialités proposées.</p>
+  </div>
+  <a href="{% url 'admin:appointments_specialty_changelist' %}" class="btn btn-light"><i class="bi bi-pencil"></i> Gérer les spécialités</a>
+</div>
+
+<div class="dash-grid">
+  {% for s in statuses %}{% if s.code != "completed" %}
+  <div class="col-3"><div class="card stat-card"><span class="icon-badge{% if s.code == 'pending' %} icon-badge-solid{% elif s.code != 'confirmed' %} icon-badge-neutral{% endif %}"><i class="bi bi-{% if s.code == 'pending' %}hourglass-split{% elif s.code == 'confirmed' %}check2-circle{% elif s.code == 'refused' %}x-circle{% else %}slash-circle{% endif %}"></i></span><div><strong>{{ s.count }}</strong><span>{{ s.label }}</span></div></div></div>
+  {% endif %}{% endfor %}
+
+  <div class="col-8">
+    <section class="card">
+      <div class="toolbar">
+        <nav class="tabs" aria-label="Filtrer par statut">
+          <a href="?" class="{% if not status %}active{% endif %}">Tous ({{ total }})</a>
+          {% for s in statuses %}<a href="?statut={{ s.code }}" class="{% if status == s.code %}active{% endif %}">{{ s.label }}</a>{% endfor %}
+        </nav>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Créneau</th><th>Patient</th><th>Médecin</th><th>Spécialité</th><th>Statut</th></tr></thead>
+          <tbody>
+            {% for a in appointments %}
+            <tr>
+              <td class="nowrap">{{ a.start|date:"j M Y, H:i" }}</td>
+              <td>{{ a.patient.get_full_name }}</td>
+              <td><strong>Dr {{ a.doctor.get_full_name }}</strong></td>
+              <td>{{ a.specialty.name|default:"—" }}</td>
+              <td>{% include "appointments/_status.html" %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5"><div class="empty-state"><span class="icon-badge icon-badge-neutral"><i class="bi bi-calendar-x"></i></span><strong>Aucun rendez-vous</strong><p>Les demandes des patients apparaîtront ici.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="col-4">
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-hospital"></i> Spécialités</h3></div>
+      <div class="card-body-flush">
+        {% for s in specialties %}
+        <div class="list-item">
+          <span class="icon-badge icon-badge-sm{% if not s.is_active %} icon-badge-neutral{% endif %}"><i class="bi bi-{{ s.icon }}"></i></span>
+          <div class="list-main"><strong>{{ s.name }}</strong><span>{{ s.doctor_count }} médecin{{ s.doctor_count|pluralize }} vérifié{{ s.doctor_count|pluralize }} · {{ s.booked }} RDV</span></div>
+          {% if not s.is_active %}<span class="badge badge-neutral">Masquée</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends layout %}
+
+{% block title %}Rendez-vous du {{ appointment.start|date:"j F Y" }}{% endblock %}
+
+{% block content %}
+{% if role == "patient" %}
+<a href="{% url 'appointments:list' %}" class="back-link"><i class="bi bi-arrow-left"></i> Mes rendez-vous</a>
+{% elif appointment.status == "pending" %}
+<a href="{% url 'appointments:requests' %}" class="back-link"><i class="bi bi-arrow-left"></i> Demandes</a>
+{% else %}
+<a href="{% url 'appointments:agenda' %}" class="back-link"><i class="bi bi-arrow-left"></i> Agenda</a>
+{% endif %}
+
+<section class="card appt-hero" style="margin-bottom:1.25rem">
+  <div class="date-tile"><span>{{ appointment.start|date:"M" }}</span><strong>{{ appointment.start|date:"j" }}</strong></div>
+  <div>
+    {% if role == "patient" %}
+    <h1>Téléconsultation avec Dr {{ appointment.doctor.get_full_name }}</h1>
+    {% else %}
+    <h1>{{ appointment.patient.get_full_name }}</h1>
+    {% endif %}
+    <p>{{ appointment.start|date:"l j F Y"|capfirst }} · {{ appointment.start|time:"H:i" }}–{{ appointment.end|time:"H:i" }} · {{ appointment.specialty.name|default:"Consultation" }}</p>
+  </div>
+  {% include "appointments/_status.html" with a=appointment %}
+</section>
+
+{% if appointment.status_key == "pending" %}
+  {% if role == "patient" %}
+  <div class="alert alert-info"><i class="bi bi-hourglass-split"></i><p>Votre demande a été envoyée le {{ appointment.created_at|date:"j F à H:i" }}. Dr {{ appointment.doctor.last_name }} doit la valider : vous serez prévenu par e-mail.</p></div>
+  {% else %}
+  <div class="alert alert-info"><i class="bi bi-inbox"></i><p>Demande reçue le {{ appointment.created_at|date:"j F à H:i" }}. Consultez le motif et l'évaluation du patient, puis acceptez ou refusez.</p></div>
+  {% endif %}
+{% elif appointment.status == "confirmed" and room %}
+  <section class="card resume-card">
+    <span class="icon-badge{% if room.is_open %} icon-badge-solid{% endif %}"><i class="bi bi-camera-video"></i></span>
+    <div class="resume-text">
+      {% if room.is_open %}
+      <h3>La consultation est en cours</h3>
+      <p>{% if role == "patient" %}Votre médecin vous attend dans la salle.{% else %}La salle est ouverte.{% endif %}</p>
+      {% elif role == "doctor" and room.patient_waiting %}
+      <h3>Le patient vous attend</h3>
+      <p>{{ appointment.patient.get_full_name }} est dans la salle d'attente. La consultation démarre quand vous entrez dans la salle.</p>
+      {% else %}
+      <h3>Rendez-vous confirmé</h3>
+      <p>{% if role == "patient" %}Vous pouvez entrer en salle d'attente à tout moment : la consultation commence dès que le médecin vous rejoint.{% else %}La consultation démarre quand vous entrez dans la salle. Le patient est prévenu.{% endif %}</p>
+      {% endif %}
+    </div>
+    <div class="resume-actions">
+      {% if role == "doctor" %}
+      <a href="{% url 'teleconsult:room' room.code %}" class="btn btn-primary"{% if not room.is_open %} data-confirm-link="Démarrer la consultation maintenant ?"{% endif %}><i class="bi bi-camera-video"></i> {% if room.is_open %}Rejoindre la salle{% else %}Démarrer la consultation{% endif %}</a>
+      {% else %}
+      <a href="{% url 'teleconsult:room' room.code %}" class="btn {% if room.is_open %}btn-primary{% else %}btn-light{% endif %}"><i class="bi bi-{% if room.is_open %}camera-video{% else %}door-open{% endif %}"></i> {% if room.is_open %}Rejoindre la salle{% else %}Entrer en salle d'attente{% endif %}</a>
+      {% endif %}
+    </div>
+  </section>
+{% elif appointment.status == "completed" and room %}
+  <div class="alert alert-success"><i class="bi bi-check2-all"></i><p>Consultation terminée.{% if room.summary %} <a href="{% url 'teleconsult:summary' room.code %}">Lire le compte rendu</a>{% endif %}</p></div>
+{% elif appointment.status == "refused" %}
+  <div class="alert alert-error"><i class="bi bi-x-circle"></i><div><p><strong>{% if role == "patient" %}Le médecin n'a pas pu accepter votre demande.{% else %}Vous avez refusé cette demande.{% endif %}</strong></p>{% if role == "patient" %}<p>Vous pouvez choisir un autre créneau ou un autre médecin.</p>{% endif %}</div></div>
+{% elif appointment.status == "cancelled" %}
+  <div class="alert alert-info"><i class="bi bi-slash-circle"></i><p>Rendez-vous annulé {% if appointment.cancelled_by_id == appointment.patient_id %}par le patient{% else %}par le médecin{% endif %}{% if appointment.cancel_reason %} : « {{ appointment.cancel_reason }} »{% endif %}.</p></div>
+{% elif appointment.status_key == "expired" %}
+  <div class="alert alert-info"><i class="bi bi-clock-history"></i><p>Cette demande n'a pas été traitée avant l'heure du rendez-vous.</p></div>
+{% endif %}
+
+<div class="dash-grid" style="margin-top:1.25rem">
+  <div class="col-7">
+    <section class="card" style="margin-bottom:1.25rem">
+      <div class="card-header"><h3><i class="bi bi-chat-left-text"></i> Motif de la consultation</h3></div>
+      <div class="card-body"><p style="margin:0">{{ appointment.reason|linebreaksbr }}</p></div>
+    </section>
+
+    {% if appointment.doctor_message %}
+    <section class="card" style="margin-bottom:1.25rem">
+      <div class="card-header"><h3><i class="bi bi-person-badge"></i> Message du médecin</h3></div>
+      <div class="card-body"><p style="margin:0">{{ appointment.doctor_message|linebreaksbr }}</p></div>
+    </section>
+    {% endif %}
+
+    {% if session %}
+      {% if role == "doctor" %}
+        {% include "appointments/_triage_panel.html" %}
+      {% else %}
+      <section class="card">
+        <div class="card-header"><h3><i class="bi bi-clipboard2-pulse"></i> Évaluation partagée</h3><span class="badge triage-{{ session.result.level }}">{{ session.result.get_level_display }}</span></div>
+        <div class="card-body">
+          <p class="small" style="margin-top:0">Le médecin voit vos symptômes et le niveau d'urgence de votre évaluation du {{ session.completed_at|date:"j F Y" }}.</p>
+          <a href="{% url 'triage:result' session.pk %}" class="btn btn-light btn-sm">Revoir mon évaluation</a>
+        </div>
+      </section>
+      {% endif %}
+    {% elif role == "doctor" %}
+    <section class="card">
+      <div class="empty-state">
+        <span class="icon-badge icon-badge-neutral"><i class="bi bi-clipboard2"></i></span>
+        <strong>Pas d'évaluation partagée</strong>
+        <p>Le patient n'a pas joint d'évaluation de ses symptômes à cette demande.</p>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  <div class="col-5">
+    {% if decision_form %}
+    <section class="card" style="margin-bottom:1.25rem">
+      <div class="card-header"><h3><i class="bi bi-check2-square"></i> Votre décision</h3></div>
+      <div class="card-body">
+        <p class="small text-muted" style="margin-top:0">Le patient sera prévenu par e-mail. En cas de refus, il pourra choisir un autre créneau.</p>
+        {% url 'appointments:detail' appointment.pk as here %}
+        {% include "appointments/_decision.html" with a=appointment next=here %}
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="card" style="margin-bottom:1.25rem">
+      {% if role == "patient" %}
+      {% with d=appointment.doctor.doctor_profile %}
+      <div class="card-header"><h3><i class="bi bi-person-badge"></i> Votre médecin</h3></div>
+      <div class="card-body">
+        <div class="doctor-head">
+          <span class="avatar">{{ appointment.doctor.first_name|slice:":1"|upper }}{{ appointment.doctor.last_name|slice:":1"|upper }}</span>
+          <div><h3>Dr {{ appointment.doctor.get_full_name }}</h3><p>{{ d.get_specialty_display }} · {{ d.city }}</p></div>
+        </div>
+        {% if appointment.status == "refused" or appointment.status == "cancelled" or appointment.status_key == "expired" %}
+        <a href="{% url 'appointments:doctor_slots' d.pk %}" class="btn btn-primary btn-block" style="margin-top:1rem">Choisir un autre créneau</a>
+        {% endif %}
+      </div>
+      {% endwith %}
+      {% else %}
+      {% with p=appointment.patient.patient_profile %}
+      <div class="card-header"><h3><i class="bi bi-person"></i> Patient</h3></div>
+      <div class="card-body">
+        <dl class="dl">
+          <dt>Nom</dt><dd>{{ appointment.patient.get_full_name }}</dd>
+          <dt>Âge</dt><dd>{% if patient_age is not None %}{{ patient_age }} ans{% else %}Non renseigné{% endif %}</dd>
+          <dt>Genre</dt><dd>{{ p.get_gender_display|default:"Non renseigné" }}</dd>
+          <dt>Téléphone</dt><dd>{{ p.phone }}</dd>
+        </dl>
+        {% if appointment.status == "confirmed" or appointment.status == "completed" %}
+        <a href="{% url 'records:patient_record' appointment.patient_id %}" class="btn btn-light btn-block" style="margin-top:1rem"><i class="bi bi-folder2-open"></i> Dossier médical</a>
+        {% if appointment.follow_up_plan %}
+        <a href="{% url 'followups:detail' appointment.follow_up_plan.pk %}" class="btn btn-light btn-block" style="margin-top:.5rem"><i class="bi bi-list-check"></i> Voir le plan de suivi</a>
+        {% else %}
+        <a href="{% url 'followups:create_plan' appointment.patient_id appointment.pk %}" class="btn btn-primary btn-block" style="margin-top:.5rem"><i class="bi bi-plus-circle"></i> Créer un plan de suivi</a>
+        {% endif %}
+        {% endif %}
+      </div>
+      {% endwith %}
+      {% endif %}
+    </section>
+
+    {% if cancel_form %}
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-slash-circle"></i> Annuler le rendez-vous</h3></div>
+      <div class="card-body">
+        <form method="post" action="{% url 'appointments:cancel' appointment.pk %}" data-confirm="Annuler ce rendez-vous ?">
+          {% csrf_token %}
+          {% include "core/partials/field.html" with field=cancel_form.message %}
+          <button type="submit" class="btn btn-light btn-block">Annuler le rendez-vous</button>
+        </form>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

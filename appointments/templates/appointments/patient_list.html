@@ -1,0 +1,49 @@
+{% extends "core/patient/_layout.html" %}
+
+{% block title %}Mes rendez-vous{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Mes rendez-vous</h1>
+    <p>Choisissez un médecin et un créneau : le médecin valide ensuite votre demande.</p>
+  </div>
+  <a href="{% url 'appointments:book' %}" class="btn btn-primary"><i class="bi bi-calendar-plus"></i> Prendre rendez-vous</a>
+</div>
+
+<section class="card">
+  <div class="toolbar">
+    <nav class="tabs" aria-label="Filtrer les rendez-vous">
+      <a href="?tab=upcoming" class="{% if tab == 'upcoming' %}active{% endif %}">À venir ({{ upcoming|length }})</a>
+      <a href="?tab=history" class="{% if tab == 'history' %}active{% endif %}">Historique ({{ history|length }})</a>
+    </nav>
+  </div>
+  <div class="card-body-flush">
+    {% for a in appointments %}
+    <div class="list-item">
+      <div class="date-tile"><span>{{ a.start|date:"M" }}</span><strong>{{ a.start|date:"j" }}</strong></div>
+      <div class="list-main">
+        <strong>Dr {{ a.doctor.get_full_name }}</strong>
+        <span>{{ a.specialty.name|default:a.doctor.doctor_profile.get_specialty_display }} · {{ a.start|date:"l j F" }} à {{ a.start|time:"H:i" }}</span>
+      </div>
+      {% include "appointments/_status.html" %}
+      <div class="list-actions">
+        <a href="{% url 'appointments:detail' a.pk %}" class="btn btn-light btn-sm">Détails</a>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+      <span class="icon-badge icon-badge-neutral"><i class="bi bi-calendar-x"></i></span>
+      {% if tab == 'history' %}
+      <strong>Aucun rendez-vous passé</strong>
+      <p>Vos rendez-vous terminés, refusés ou annulés apparaîtront ici.</p>
+      {% else %}
+      <strong>Aucun rendez-vous prévu</strong>
+      <p>Choisissez un médecin et un créneau. Vous pouvez aussi commencer par évaluer vos symptômes pour être orienté.</p>
+      <a href="{% url 'appointments:book' %}" class="btn btn-primary">Prendre rendez-vous</a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "core/patient/_layout.html" %}
+
+{% block title %}Évaluation des symptômes{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Évaluation des symptômes</h1>
+    <p>Décrivez ce que vous ressentez : nous évaluons le niveau d'urgence et vous orientons.</p>
+  </div>
+  <a href="{% url 'triage:start' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nouvelle évaluation</a>
+</div>
+
+<div class="emergency-banner">
+  <i class="bi bi-telephone-outbound"></i>
+  <p><strong>Urgence vitale ?</strong> Douleur thoracique intense, difficulté à respirer, perte de connaissance… N'attendez pas : appelez immédiatement le <strong>112</strong> ou le numéro d'urgence local.</p>
+</div>
+
+<div class="dash-grid">
+  <div class="col-12">
+    {% if in_progress %}
+    <section class="card resume-card">
+      <span class="icon-badge"><i class="bi bi-hourglass-split"></i></span>
+      <div class="resume-text">
+        <h3>Évaluation en cours</h3>
+        <p>Commencée le {{ in_progress.created_at|date:"j F Y à H:i" }} · « {{ in_progress.chief_complaint|truncatechars:70 }} »</p>
+      </div>
+      <div class="resume-actions">
+        <form method="post" action="{% url 'triage:cancel' in_progress.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-ghost">Abandonner</button>
+        </form>
+        <a href="{% url 'triage:symptoms' in_progress.pk %}" class="btn btn-primary">Reprendre <i class="bi bi-arrow-right"></i></a>
+      </div>
+    </section>
+    {% else %}
+    <section class="card how-card">
+      <div class="how-step"><span class="icon-badge icon-badge-sm"><i class="bi bi-chat-left-text"></i></span><div><strong>1. Le contexte</strong><span>Votre motif, votre température et vos facteurs de risque.</span></div></div>
+      <div class="how-step"><span class="icon-badge icon-badge-sm"><i class="bi bi-ui-checks-grid"></i></span><div><strong>2. Vos symptômes</strong><span>Leur intensité et depuis quand ils sont présents.</span></div></div>
+      <div class="how-step"><span class="icon-badge icon-badge-sm"><i class="bi bi-signpost-split"></i></span><div><strong>3. Votre orientation</strong><span>Un niveau d'urgence et une recommandation claire.</span></div></div>
+      <a href="{% url 'triage:start' %}" class="btn btn-primary btn-lg">Commencer <i class="bi bi-arrow-right"></i></a>
+    </section>
+    {% endif %}
+  </div>
+
+  <div class="col-12">
+    <section class="card">
+      <div class="card-header"><h3><i class="bi bi-clock-history"></i> Mes évaluations</h3><span class="small text-muted">{{ history|length }} évaluation{{ history|length|pluralize }}</span></div>
+      {% if history %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Date</th><th>Motif</th><th>Niveau</th><th>Orientation</th><th></th></tr></thead>
+          <tbody>
+            {% for s in history %}
+            <tr>
+              <td class="nowrap">{{ s.completed_at|date:"j M Y, H:i" }}</td>
+              <td>{{ s.chief_complaint|truncatechars:60 }}</td>
+              <td><span class="badge triage-{{ s.result.level }}">{{ s.result.get_level_display }}</span></td>
+              <td>{{ s.result.get_suggested_specialty_display }}</td>
+              <td><a href="{% url 'triage:result' s.pk %}" class="btn btn-light btn-sm">Voir</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <span class="icon-badge icon-badge-neutral"><i class="bi bi-clipboard2-pulse"></i></span>
+        <strong>Aucune évaluation terminée</strong>
+        <p>Vos résultats apparaîtront ici pour que vous puissiez les retrouver et les partager avec votre médecin.</p>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+<div class="rx-row" data-formset-row>
+  <div class="rx-row-head">
+    <span class="rx-num">Médicament <span data-formset-num>{{ forloop.counter|default:"" }}</span></span>
+    <button type="button" class="btn btn-ghost btn-sm" data-formset-remove hidden><i class="bi bi-x-lg"></i> Retirer</button>
+  </div>
+  {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+  {% include "core/partials/field.html" with field=f.drug_name %}
+  <div class="form-row form-row-3">
+    {% include "core/partials/field.html" with field=f.dosage %}
+    {% include "core/partials/field.html" with field=f.frequency %}
+    {% include "core/partials/field.html" with field=f.duration %}
+  </div>
+  {% include "core/partials/field.html" with field=f.instructions %}
+</div>
